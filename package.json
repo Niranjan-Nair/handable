@@ -2,6 +2,12 @@
   "name": "handwrite",
   "version": "1.0.0",
   "description": "Learns your handwriting from a few samples and writes any text in it, as SVG or PDF.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Niranjan-Nair/handwrite.git"
+  },
+  "homepage": "https://autohandwrite.vercel.app",
   "type": "module",
   "bin": {
     "handwrite": "./cli.js"

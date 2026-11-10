@@ -143,6 +143,34 @@ nav button:hover {
   background: rgba(0, 0, 0, 0.04);
   color: var(--text);
 }
+/* the project's source, at the foot of the sidebar */
+.source-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: -12px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--soft);
+  text-decoration: none;
+}
+.source-link svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: currentColor;
+  opacity: 0.8;
+}
+.source-link:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text);
+}
+.source-link:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
 nav button.on {
   background: var(--rail-on);
   color: var(--text);
@@ -649,10 +677,10 @@ output {
   color: var(--muted);
 }
 .lib-tools {
-  gap: 12px;
+  gap: 12px 24px;
   margin: 24px 0 32px;
   padding: 16px 18px;
-  align-items: flex-end;
+  align-items: center;
   background: var(--rail);
   border-radius: 14px;
 }
@@ -671,6 +699,13 @@ output {
 }
 .lib-tools button.danger:hover {
   background: #fbeceb;
+}
+/* the data buttons, on the right, level with the slider */
+.lib-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
 }
 .slider-field {
   max-width: 440px;
@@ -1351,12 +1386,35 @@ details.help p {
     display: none;
   }
   #status {
+    order: 2;
     margin: 0;
     flex-basis: 100%;
     min-height: 0;
   }
   #status:empty {
     display: none;
+  }
+  /* the data buttons wrap under the slider, lined up with it */
+  .lib-actions {
+    margin-left: 0;
+  }
+  /* just the mark, at the end of the bar */
+  .source-link {
+    order: 1;
+    margin: 0 0 0 auto;
+    padding: 6px;
+  }
+  .source-link span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .source-link svg {
+    width: 18px;
+    height: 18px;
   }
   main {
     padding: 24px 16px 80px;

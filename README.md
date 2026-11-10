@@ -1,5 +1,7 @@
 # handwrite
 
+Try it at **[autohandwrite.vercel.app](https://autohandwrite.vercel.app)**.
+
 Train a model on your own handwriting, then turn any text into an SVG written in your hand.
 It runs entirely in the browser, has no runtime dependencies and no build step.
 
@@ -342,3 +344,7 @@ There's no separate text box: the page in the preview is where you type.
   texture come out exactly as on screen, and embedded in a multi-page PDF. With a transparent
   background, the PDF is one page the size of the writing. The CLI writes SVG only, with pages
   stacked.
+
+## License
+
+[MIT](LICENSE)
