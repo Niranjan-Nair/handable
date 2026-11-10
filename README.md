@@ -1,6 +1,6 @@
 # handable
 
-Try it at **[autohandwrite.vercel.app](https://autohandwrite.vercel.app)**.
+Try it at **[handable.vercel.app](https://handable.vercel.app)**.
 
 Train a model on your own handwriting, then turn any text into an SVG written in your hand.
 It runs entirely in the browser, has no runtime dependencies and no build step.

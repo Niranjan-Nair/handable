@@ -7,7 +7,7 @@
         "type": "git",
         "url": "git+https://github.com/Niranjan-Nair/handwrite.git"
     },
-    "homepage": "https://autohandwrite.vercel.app",
+    "homepage": "https://handable.vercel.app",
     "type": "module",
     "bin": {
         "handable": "./cli.js"
