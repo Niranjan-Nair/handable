@@ -9,40 +9,40 @@ import * as HW from './src/engine/index.js';
 // options that take a number, options that take true / false, and option names
 // that differ from the engine's
 const NUMERIC = new Set([
-  'smoothness',
-  'penConsistency',
-  'formality',
-  'sizeConsistency',
-  'randomness',
-  'size',
-  'maxWidth',
-  'margin',
-  'lineHeight',
-  'penWidth',
-  'slant',
-  'letterSpacing',
-  'wordSpacing',
-  'variantThreshold',
+    'smoothness',
+    'penConsistency',
+    'formality',
+    'sizeConsistency',
+    'randomness',
+    'size',
+    'maxWidth',
+    'margin',
+    'lineHeight',
+    'penWidth',
+    'slant',
+    'letterSpacing',
+    'wordSpacing',
+    'variantThreshold',
 ]);
 
 const BOOL = new Set(['infer', 'ligatures', 'scan', 'doubleSided']);
 
 const ALIASES = {
-  width: 'maxWidth',
-  color: 'color',
-  'line-height': 'lineHeight',
-  'pen-width': 'penWidth',
-  'letter-spacing': 'letterSpacing',
-  'word-spacing': 'wordSpacing',
-  threshold: 'variantThreshold',
-  'size-consistency': 'sizeConsistency',
-  'pen-consistency': 'penConsistency',
-  'page-size': 'pageSize',
-  'double-sided': 'doubleSided',
+    width: 'maxWidth',
+    color: 'color',
+    'line-height': 'lineHeight',
+    'pen-width': 'penWidth',
+    'letter-spacing': 'letterSpacing',
+    'word-spacing': 'wordSpacing',
+    threshold: 'variantThreshold',
+    'size-consistency': 'sizeConsistency',
+    'pen-consistency': 'penConsistency',
+    'page-size': 'pageSize',
+    'double-sided': 'doubleSided',
 };
 
 function usage() {
-  console.error(`usage: node cli.js --data <data.json> [options] [text]
+    console.error(`usage: node cli.js --data <data.json> [options] [text]
   text comes from the argument, --file <path>, or stdin
   --out <file.svg>       write to file instead of stdout
   --seed <s>             same seed + same text = same output
@@ -64,7 +64,7 @@ function usage() {
   --scan true|false      plain / lined paper looks like a scanned sheet (default true)
   --double-sided true|false  lined paper: even pages are the backs of sheets, margin on the right (default false)`);
 
-  process.exit(1);
+    process.exit(1);
 }
 
 const args = process.argv.slice(2);
@@ -75,30 +75,30 @@ let filePath;
 const rest = [];
 
 for (let i = 0; i < args.length; i++) {
-  const a = args[i];
+    const a = args[i];
 
-  if (!a.startsWith('--')) {
-    rest.push(a);
-    continue;
-  }
-
-  const key = a.slice(2);
-  const val = args[++i];
-  if (val === undefined) usage();
-
-  if (key === 'data') dataPath = val;
-  else if (key === 'out') outPath = val;
-  else if (key === 'file') filePath = val;
-  else {
-    const k = ALIASES[key] || key;
-
-    if (!(k in HW.DEFAULTS)) {
-      console.error(`unknown option --${key}`);
-      usage();
+    if (!a.startsWith('--')) {
+        rest.push(a);
+        continue;
     }
 
-    opts[k] = NUMERIC.has(k) ? Number(val) : BOOL.has(k) ? !/^(false|0|no|off)$/i.test(val) : val;
-  }
+    const key = a.slice(2);
+    const val = args[++i];
+    if (val === undefined) usage();
+
+    if (key === 'data') dataPath = val;
+    else if (key === 'out') outPath = val;
+    else if (key === 'file') filePath = val;
+    else {
+        const k = ALIASES[key] || key;
+
+        if (!(k in HW.DEFAULTS)) {
+            console.error(`unknown option --${key}`);
+            usage();
+        }
+
+        opts[k] = NUMERIC.has(k) ? Number(val) : BOOL.has(k) ? !/^(false|0|no|off)$/i.test(val) : val;
+    }
 }
 
 if (!dataPath) usage();
@@ -116,6 +116,6 @@ if (res.ligatures.length) console.error(`ligatures: ${res.ligatures.join(' ')}`)
 if (res.inferred.length) console.error(`inferred (not trained): ${res.inferred.join(' ')}`);
 if (res.missing.length) console.error(`warning: cannot write: ${res.missing.join(' ')}`);
 if (outPath) {
-  fs.writeFileSync(outPath, res.svg);
-  console.error(`wrote ${outPath} (${res.width}×${res.height}, ${res.lines} line${res.lines > 1 ? 's' : ''})`);
+    fs.writeFileSync(outPath, res.svg);
+    console.error(`wrote ${outPath} (${res.width}×${res.height}, ${res.lines} line${res.lines > 1 ? 's' : ''})`);
 } else process.stdout.write(res.svg + '\n');

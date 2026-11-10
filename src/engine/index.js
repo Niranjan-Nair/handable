@@ -38,9 +38,9 @@ export { sentenceToSamples } from './reading/to-samples.js';
 // How an untrained character would be built: { sources, matched, total }, or null
 // when it's trained (or can't be built).
 export function inferInfo(model, ch) {
-  if (model.chars[ch]) return null;
+    if (model.chars[ch]) return null;
 
-  const plan = inferPlan(model, ch);
+    const plan = inferPlan(model, ch);
 
-  return plan && { sources: plan.sources, matched: plan.matched, total: plan.total };
+    return plan && { sources: plan.sources, matched: plan.matched, total: plan.total };
 }
