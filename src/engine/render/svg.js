@@ -10,9 +10,11 @@ import { clamp } from '../util.js';
 export function stackPages(pages, w, h) {
   const gap = Math.round(h * 0.03);
   const total = pages.length * h + (pages.length - 1) * gap;
+
   const inner = pages.map((p, i) =>
     p.replace(/^<svg[^>]*>/, `<svg x="0" y="${i * (h + gap)}" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`),
   );
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${total}" viewBox="0 0 ${w} ${total}">\n${inner.join('\n')}\n</svg>`;
 }
 
@@ -22,11 +24,13 @@ function inkSVG(placed, o, R) {
   const color = escapeAttr(o.color);
   const parts = [];
   let maskAttr = '';
+
   if (o.inkEnds && o.inkEnds.length) {
     // opacity mask: slightly translucent body, denser where strokes start,
     // fading where they end (soft radial spots, so there are no seams)
     const id = 'hw' + (o.idSuffix || '0');
     const g = Math.round(255 * (1 - o.inkBase));
+
     parts.push(
       `<defs><radialGradient id="${id}d"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>` +
         `<radialGradient id="${id}u"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>` +
@@ -40,8 +44,10 @@ function inkSVG(placed, o, R) {
           .join('') +
         `</mask></defs>`,
     );
+
     maskAttr = ` mask="url(#${id}m)"`;
   }
+
   if (o.pen === 'pencil') {
     parts.push(pencilSVG(placed, { ...o, region: R }, penPx, maskAttr));
   } else if (o.animate) {
@@ -50,18 +56,23 @@ function inkSVG(placed, o, R) {
     parts.push(
       `<g fill="none" stroke="${color}" stroke-width="${fmt(penPx)}" stroke-linecap="round" stroke-linejoin="round"${maskAttr}>`,
     );
+
     const dots = [];
+
     for (const g of placed) {
       const d = g.strokes
         .filter((st) => polyLength(st) >= penPx * 1.2)
         .map(centerPath)
         .join('');
+
       if (d) parts.push(`<path d="${d}" opacity="${fmt(g.opacity)}"/>`);
       for (const st of g.strokes) if (polyLength(st) < penPx * 1.2) dots.push(dotPath(centroid(st), penPx * 0.8));
     }
+
     if (dots.length) parts.push(`</g><g fill="${color}"${maskAttr}><path d="${dots.join('')}"/>`);
   } else {
     parts.push(`<g fill="${color}"${maskAttr}>`);
+
     for (const g of placed) {
       // a glyph's outline is the same wherever it's put: drawn once at its own origin
       // and moved into place (a word that only moved isn't drawn again)
@@ -69,13 +80,17 @@ function inkSVG(placed, o, R) {
         parts.push(
           `<path transform="translate(${fmt(g.ox)} ${fmt(g.oy)})" d="${glyphInk(g.glyph, g.ps, penPx)}" opacity="${fmt(g.opacity)}"/>`,
         );
+
         continue;
       }
+
       const d = g.strokes.map((s) => inkPath(s, penPx)).join('');
       parts.push(`<path d="${d}" opacity="${fmt(g.opacity)}"/>`);
     }
   }
+
   parts.push('</g>');
+
   return parts.join('\n');
 }
 
@@ -88,15 +103,20 @@ export function renderLayers(P, o) {
   const W = o.width;
   const H = o.height;
   const scanned = o.scan && o.paper !== 'none';
+
   const svgOpen = (y, h) =>
     `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${h}" viewBox="0 ${y} ${W} ${h}">`;
+
   const paper = svgOpen(0, H) + (scanned ? scanOpen(o) : '') + paperSVG(o) + (scanned ? scanClose(o) : '') + '</svg>';
   const byLine = new Map();
+
   const bucket = (li) => {
     let b = byLine.get(li);
     if (!b) byLine.set(li, (b = { placed: [], ends: [], hls: [] }));
+
     return b;
   };
+
   for (const g of P.placed) bucket(g.line).placed.push(g);
   for (const e of P.inkEnds || []) bucket(e.line).ends.push(e);
   P.hls.forEach((h, j) => bucket(P.hlLines[j]).hls.push(h));
@@ -104,20 +124,25 @@ export function renderLayers(P, o) {
   // room around the writing for the pen's width, the grain's raggedness and the scan's bend
   const pad = Math.ceil(24 + penPx * 3 + (scanned ? W * 0.006 : 0));
   const strips = [];
+
   for (const [li, b] of byLine) {
     let y0 = Infinity;
     let y1 = -Infinity;
+
     for (const g of b.placed)
       for (const st of g.strokes)
         for (const q of st) {
           if (q.y < y0) y0 = q.y;
           if (q.y > y1) y1 = q.y;
         }
+
     if (y0 > y1) continue;
+
     const y = Math.max(0, Math.floor(y0 - pad));
     const h = Math.min(H, Math.ceil(y1 + pad)) - y;
     const R = { x: 0, y, w: W, h };
     const so = { ...o, inkEnds: b.ends, idSuffix: o.idSuffix + 'y' + y };
+
     strips.push({
       line: li,
       y,
@@ -131,14 +156,17 @@ export function renderLayers(P, o) {
         '</svg>',
     });
   }
+
   return { paper, strips };
 }
 
 export function renderSVG(placed, o) {
   const parts = [];
+
   parts.push(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${o.width}" height="${o.height}" viewBox="0 0 ${o.width} ${o.height}">`,
   );
+
   const scanned = o.scan && o.paper !== 'none';
   if (scanned) parts.push(scanOpen(o));
   if (o.paper !== 'none') parts.push(paperSVG(o));
@@ -148,6 +176,7 @@ export function renderSVG(placed, o) {
   parts.push(inkSVG(placed, o, { x: 0, y: 0, w: o.width, h: o.height }));
   if (scanned) parts.push(scanClose(o));
   parts.push('</svg>');
+
   return parts.join('\n');
 }
 
@@ -163,8 +192,10 @@ export function glyphSVG(glyph, opts = {}) {
   const strokes = glyph.strokes.map((s) => s.map((p) => ({ x: ox + p.x * size, y: oy + p.y * size, w: p.w })));
   const penPx = (opts.penWidth || 0.06) * size;
   const d = strokes.map((s) => inkPath(s, penPx)).join('');
+
   const guide = opts.guides
     ? `<line x1="0" y1="${fmt(oy)}" x2="${W}" y2="${fmt(oy)}" stroke="#d9cfb8" stroke-width="1"/>`
     : '';
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${box}" viewBox="0 0 ${W} ${box}">${guide}<path d="${d}" fill="${color}"/></svg>`;
 }

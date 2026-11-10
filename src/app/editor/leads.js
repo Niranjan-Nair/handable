@@ -18,11 +18,13 @@ export function leadOf(t, k) {
   const ws = t.slice(a, b);
   const m = HW.listMarkerAt(t, b);
   let bullet = null;
+
   if (m) {
     bullet = m.ol ? { ol: m.ol } : { ul: m.ch };
     b += m.len;
     while (isBlank(t[b])) b++;
   }
+
   return { a, b, ws, bullet };
 }
 
@@ -31,9 +33,12 @@ export function leadOf(t, k) {
 export function markerText(spec, next) {
   if (spec.ul != null) {
     if ('-•+>'.includes(spec.ul) && spec.ul.length === 1) return spec.ul + ' ';
+
     return `<ul ${spec.ul.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}> `;
   }
+
   const o = spec.ol;
+
   return `<ol ${o.pre}${o.kind}${o.post}${o.start != null && !next ? ' ' + o.start : ''}> `;
 }
 
@@ -46,8 +51,10 @@ const levelOf = (ws) => (ws.match(/\t/g) || []).length;
 // spec moved dir levels in (+) or out (-) of where it is
 function stepSpec(spec, dir) {
   if (spec.ul != null) return spec;
+
   const i = KINDS.indexOf(spec.ol.kind);
   const kind = i < 0 ? spec.ol.kind : KINDS[(((i + dir) % 3) + 3) % 3];
+
   return { ol: { ...spec.ol, kind, start: dir ? null : spec.ol.start } };
 }
 
@@ -57,6 +64,7 @@ function nestLead(L, dir) {
   const spec = L.bullet.ol ? { ol: L.bullet.ol } : { ul: L.bullet.ul };
   if (dir > 0) return '\t' + L.ws + markerText(stepSpec(spec, 1));
   if (!L.ws.includes('\t')) return L.ws;
+
   return L.ws.replace('\t', '') + markerText(stepSpec(spec, -1));
 }
 
@@ -64,12 +72,15 @@ function nestLead(L, dir) {
 export function parasIn(t, a, b) {
   const out = [];
   let k = leadOf(t, a).a;
+
   for (;;) {
     out.push(k);
     const n = t.slice(k).search(/[\n\f]/);
     if (n < 0 || k + n + 1 > b || (k + n + 1 === b && b > a)) break;
+
     k += n + 1;
   }
+
   return out;
 }
 
@@ -77,29 +88,38 @@ export function parasIn(t, a, b) {
 // lead's text (or null to leave it). The selection a … b stays on the same text.
 export function withLeads(t, a, b, starts, fn) {
   const edits = [];
+
   for (const k of starts) {
     const L = leadOf(t, k);
     const lead = fn(L);
     if (lead != null && lead !== t.slice(L.a, L.b)) edits.push({ a: L.a, b: L.b, s: lead });
   }
+
   if (!edits.length) return {};
+
   let out = '';
   let from = 0;
+
   for (const e of edits) {
     out += t.slice(from, e.a) + e.s;
     from = e.b;
   }
+
   out += t.slice(from);
+
   // where a position ends up: inside a lead, at the end of the new one
   const map = (pos) => {
     let off = 0;
+
     for (const e of edits) {
       if (pos >= e.b) off += e.s.length - (e.b - e.a);
       else if (pos > e.a) return e.a + off + e.s.length;
       else break;
     }
+
     return pos + off;
   };
+
   return replaceChange(t, out, map(a), map(b));
 }
 
@@ -111,10 +131,12 @@ export function setList(t, a, b, spec, byLevel) {
   return withLeads(t, a, b, parasIn(t, a, b), (L) => {
     if (!spec) return L.bullet ? L.ws : null;
     if (byLevel) return L.ws + markerText(stepSpec(spec, levelOf(L.ws)));
+
     const own =
       L.bullet && L.bullet.ol && spec.ol
         ? { ol: { ...spec.ol, start: spec.ol.start != null ? spec.ol.start : L.bullet.ol.start } }
         : spec;
+
     return L.ws + markerText(own);
   });
 }
@@ -123,6 +145,7 @@ export function setList(t, a, b, spec, byLevel) {
 export const allListed = (t, a, b, type) =>
   parasIn(t, a, b).every((k) => {
     const L = leadOf(t, k);
+
     return L.bullet && (type === 'ol' ? !!L.bullet.ol : L.bullet.ul != null);
   });
 
@@ -130,6 +153,7 @@ export const allListed = (t, a, b, type) =>
 // before); ol: the numbering, if it isn't a numbered item yet
 export function setStart(t, a, b, ol, start) {
   const k = parasIn(t, a, a)[0];
+
   return withLeads(t, a, b, [k], (L) => L.ws + markerText({ ol: { ...((L.bullet && L.bullet.ol) || ol), start } }));
 }
 
@@ -146,6 +170,7 @@ export function leadKey(t, a, b, key, shift) {
   const L = leadOf(t, a);
   const atStart = !sel && a === L.b && !mathAround(t, a);
   const setLead = (ws) => replaceChange(t, t.slice(0, L.a) + ws + t.slice(L.b), L.a + ws.length);
+
   if (L.bullet && atStart) {
     const n = t.slice(L.b).search(/[\n\f]/);
     const empty = (n < 0 ? t.length : L.b + n) === L.b;
@@ -153,27 +178,37 @@ export function leadKey(t, a, b, key, shift) {
     if (key === 'Enter' && !shift && empty) return setLead(L.ws.includes('\t') ? nestLead(L, -1) : '');
     if (key === 'Tab') return setLead(nestLead(L, shift ? -1 : 1));
   }
+
   if (key === 'Enter' && L.bullet && !sel && !shift && !mathAround(t, a))
     return { a, b: a, str: '\n' + L.ws + markerText(L.bullet, true) };
+
   if (key === 'Backspace') {
     if (!atStart || !L.ws) return null;
+
     return setLead(/ /.test(L.ws) ? L.ws.replace(/ /g, '') : '');
   }
+
   if (key === 'Enter') {
     if (sel || shift || !L.ws || mathAround(t, a)) return null;
+
     return { a, b: a, str: '\n' + L.ws }; // a new paragraph after this one, with the same indent
   }
+
   // Tab
   if (!t.slice(a, b).includes('\n') && !atStart) return { a, b, str: '\t' };
+
   if (atStart) {
     if (!shift) return setLead(/ /.test(L.ws) ? '\t' + L.ws : L.ws + '    ');
+
     return setLead(/\t/.test(L.ws) ? L.ws.replace('\t', '') : '');
   }
+
   // several paragraphs: the whole of each one moves in or out a step (list items
   // taking the marker of their new level)
   return withLeads(t, a, b, parasIn(t, a, b), (P) => {
     if (P.bullet) return nestLead(P, shift ? -1 : 1);
     if (!shift) return '\t' + P.ws;
+
     return P.ws.includes('\t') ? P.ws.replace('\t', '') : ''; // a tab off (or, with none, the first-line indent)
   });
 }
@@ -183,13 +218,17 @@ const ROMAN = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 };
 // What "1." "a)" "(iv)" and the like are as a list number: { kind, n }, or null.
 function listNumberOf(v) {
   if (/^\d+$/.test(v)) return { kind: '1', n: +v };
+
   if (/^[ivxlcdm]+$/i.test(v) && (v.length > 1 || /^[iI]$/.test(v))) {
     const ds = [...v.toLowerCase()].map((c) => ROMAN[c]);
     const n = ds.reduce((t, d, j) => t + (d < (ds[j + 1] || 0) ? -d : d), 0);
     if (HW.listNumber(n, 'i') !== v.toLowerCase()) return null; // not a real roman numeral
+
     return { kind: v === v.toLowerCase() ? 'i' : 'I', n };
   }
+
   if (v.length === 1) return { kind: v === v.toLowerCase() ? 'a' : 'A', n: v.toLowerCase().charCodeAt(0) - 96 };
+
   return null;
 }
 
@@ -200,12 +239,17 @@ function listNumberOf(v) {
 export function listAutoformat(t, a) {
   const L = leadOf(t, a);
   if (mathAround(t, a) || L.bullet) return null;
+
   const typed = t.slice(L.a, a);
   if (/^[ \t]*\*$/.test(typed)) return { change: { a: a - 1, b: a, str: '• ' } };
+
   const m = /^([ \t]*)(\(?)(\d{1,6}|[a-zA-Z]|[ivxlcdm]+|[IVXLCDM]+)([.)])$/.exec(typed);
   if (!m || (m[2] && m[4] !== ')')) return null;
+
   const num = listNumberOf(m[3]);
   if (!num) return null;
+
   const ol = { pre: m[2], kind: num.kind, post: m[4], start: num.n === 1 ? null : num.n };
+
   return { change: { a: L.a + m[1].length, b: a, str: markerText({ ol }) }, ol };
 }

@@ -16,6 +16,7 @@ import { clamp } from './util.js';
 function resolveOptions(model, userOpts) {
   const o = Object.assign({}, DEFAULTS, userOpts || {});
   o.shearDelta = o.slant != null && o.slant !== '' ? Math.tan((+o.slant * Math.PI) / 180) - model.style.shear : 0;
+
   return o;
 }
 
@@ -36,6 +37,7 @@ export function generate(model, text, userOpts) {
   const height = pg ? pg.H : Math.ceil((lastLine.baseline + Math.max(0.6, lastLine.bot + 0.15)) * o.size + o.margin);
   const out = render(writer, placed.pages, { pg, width, height });
   const { found } = writer;
+
   return {
     svg: out.svg,
     pages: out.pages,
@@ -74,6 +76,7 @@ function render(writer, pages, { pg, width, height }) {
   const idBase = Math.floor(rng() * 1e9).toString(36);
   const grainBase = Math.floor(rng() * 1000);
   const animOut = { total: 0 };
+
   const pageOpts = (P, i) => ({
     ...o,
     width,
@@ -86,9 +89,11 @@ function render(writer, pages, { pg, width, height }) {
     highlights: P.hls,
     animOut,
   });
+
   const layered = !!o.layers && !!pg && !o.animate;
   const layers = layered ? pages.map((P, i) => renderLayers(P, pageOpts(P, i))) : null;
   const svgs = layered ? null : pages.map((P, i) => renderSVG(P.placed, pageOpts(P, i)));
   const svg = layered ? null : svgs.length === 1 ? svgs[0] : stackPages(svgs, width, height);
+
   return { svg, pages: svgs, layers, animTotal: animOut.total, grainBase };
 }

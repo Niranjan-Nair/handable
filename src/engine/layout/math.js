@@ -6,59 +6,13 @@ import { drawnDelimiter, handDelimiter } from './delimiters.js';
 import { runBox } from './runs.js';
 
 export const SCRIPT = 0.65; // scale of super / subscripts
+
 // math spacing, in letter sizes: symbols sit this many letter gaps apart, with extra
 // room around operators / relations and after big operators (∫, Σ) with their limits
 const M_GAP = 1.7;
 const M_OP = 0.38;
 const M_BIG = 0.16;
-const OPS = new Set([
-  '+',
-  '−',
-  '=',
-  '<',
-  '>',
-  '×',
-  '÷',
-  '±',
-  '≤',
-  '≥',
-  '≠',
-  '≈',
-  '→',
-  '←',
-  '·',
-  '∈',
-  '∉',
-  '∋',
-  '⊂',
-  '⊃',
-  '⊆',
-  '⊇',
-  '∪',
-  '∩',
-  '∖',
-  '∧',
-  '∨',
-  '⊕',
-  '⊗',
-  '⊙',
-  '⇒',
-  '⇐',
-  '⇔',
-  '↔',
-  '↦',
-  '≡',
-  '∼',
-  '≃',
-  '≅',
-  '∝',
-  '⊥',
-  '∥',
-  '≪',
-  '≫',
-  '∴',
-  '∵',
-]);
+const OPS = new Set('+−=<>×÷±≤≥≠≈→←·∈∉∋⊂⊃⊆⊇∪∩∖∧∨⊕⊗⊙⇒⇐⇔↔↦≡∼≃≅∝⊥∥≪≫∴∵');
 
 // the space between two pieces of an equation that stay on one line
 export const mathGlue = (writer) => Math.max(writer.letterGap(), 0.1) * M_GAP + M_OP;
@@ -74,6 +28,7 @@ export function mathList(writer, list, s, disp) {
   let prevBig = false;
   let prevOpen = false;
   let first = true;
+
   for (const a of list) {
     const ab = mathAtom(writer, a, s, disp);
     // a + / − sign at the start, or after another operator / an opening bracket, is unary
@@ -92,7 +47,9 @@ export function mathList(writer, list, s, disp) {
     prevBig = isBig;
     first = false;
   }
+
   b.w = x;
+
   return b;
 }
 
@@ -112,17 +69,20 @@ const ATOMS = {
 
 export function mathAtom(writer, a, s, disp) {
   const layout = ATOMS[a.t];
+
   return layout ? layout(writer, a, s, disp) : emptyBox();
 }
 
 function charAtom(writer, a, s, disp) {
   if (!a.big) return charBox(writer, a.ch, s, 'solo', { font: a.font }).b;
+
   // big operators: larger, centered on the math axis
   const { b } = charBox(writer, a.ch, s * (disp ? 1.6 : 1.3));
   const dy = axisOf(writer, s) - (b.top + b.bot) / 2;
   const out = emptyBox();
   addBox(out, b, 0, dy);
   out.w = b.w;
+
   return out;
 }
 
@@ -130,18 +90,23 @@ function charAtom(writer, a, s, disp) {
 function textAtom(writer, a, s) {
   const b = emptyBox();
   let x = 0;
+
   for (const w of a.str.split(/(\s+)/)) {
     if (!w) continue;
+
     if (/^\s+$/.test(w)) {
       x += 0.3 * s;
       continue;
     }
+
     const cs = Array.from(w);
     const rb = runBox(writer, cs, s, { start: 0, n: cs.length, prev: null, font: a.font });
     addBox(b, rb, x, 0);
     x += rb.w;
   }
+
   b.w = x + (a.fn ? 0.14 * s : 0);
+
   return b;
 }
 
@@ -156,6 +121,7 @@ function scriptsAtom(writer, a, s, disp) {
   const op = a.base;
   const limitOp = op && ((op.t === 'ch' && op.big && !INTEGRALS.includes(op.ch)) || (op.t === 'text' && op.limOp));
   const stacked = a.stack || (op && op.limits != null ? op.limits : !!(disp && limitOp));
+
   if (stacked) {
     const W = Math.max(base.w, sup ? sup.w : 0, sub ? sub.w : 0);
     addBox(b, base, (W - base.w) / 2, 0);
@@ -163,23 +129,29 @@ function scriptsAtom(writer, a, s, disp) {
       addBox(b, sup, (W - sup.w) / 2 + (a.accent ? 0.04 * s : 0), base.top - (a.accent ? 0.05 : 0.12) * s - sup.bot);
     if (sub) addBox(b, sub, (W - sub.w) / 2, base.bot + 0.12 * s - sub.top);
     b.w = W;
+
     return b;
   }
+
   addBox(b, base, 0, 0);
   const sx = base.w + (a.base && a.base.big ? 0.16 : 0.09) * s; // big operators (∫, Σ) get more clearance
   let supY = Math.min(-0.9 * X * s, base.top + 0.25 * s);
   let subY = Math.max(0.22 * s, base.bot * 0.6);
+
   if (sup && sub) {
     const gap = subY + sub.top - (supY + sup.bot);
+
     if (gap < 0.12 * s) {
       const d = (0.12 * s - gap) / 2;
       supY -= d;
       subY += d;
     }
   }
+
   if (sup) addBox(b, sup, sx, supY);
   if (sub) addBox(b, sub, sx, subY);
   b.w = sx + Math.max(sup ? sup.w : 0, sub ? sub.w : 0);
+
   return b;
 }
 
@@ -197,6 +169,7 @@ function fracAtom(writer, a, s) {
   b.w = barW + 2 * pad;
   b.top = Math.min(b.top, axis);
   b.bot = Math.max(b.bot, axis);
+
   return b;
 }
 
@@ -209,6 +182,7 @@ function sqrtAtom(writer, a, s, disp) {
   const off = ib ? Math.max(0, ib.w - 0.08 * s) : 0;
   const rw = 0.3 * s;
   const b = emptyBox();
+
   const radical = handStroke(
     writer,
     [
@@ -220,12 +194,14 @@ function sqrtAtom(writer, a, s, disp) {
     ],
     0.4,
   );
+
   b.items.push({ g: radical, x: 0, y: 0, s: 1 });
   if (ib) addBox(b, ib, 0, mid - 0.08 * s - ib.bot);
   addBox(b, body, off + rw + 0.08 * s, 0);
   b.top = Math.min(b.top, top - 0.02);
   b.bot = Math.max(b.bot, bot);
   b.w = off + rw + body.w + 0.2 * s;
+
   return b;
 }
 
@@ -246,15 +222,18 @@ function matrixAtom(writer, a, s, disp) {
   const rowBot = cells.map((r) => Math.max(0.3 * cs, ...r.map((c) => c.bot)));
   const grid = emptyBox();
   let y = 0;
+
   cells.forEach((r, ri) => {
     if (ri > 0) y += rowBot[ri - 1] + rowGap - rowTop[ri];
     let x = 0;
+
     for (let j = 0; j < nCols; j++) {
       const c = r[j];
       if (c) addBox(grid, c, x + (cases ? 0 : (colW[j] - c.w) / 2), y);
       x += colW[j] + colGap;
     }
   });
+
   grid.w = colW.reduce((t, w) => t + w, 0) + colGap * (nCols - 1);
   // center the grid on the math axis
   const top = rowTop[0];
@@ -265,28 +244,35 @@ function matrixAtom(writer, a, s, disp) {
   const B = bot + dy + 0.12 * s;
   const dw = (L === '{' ? 0.26 : L === '(' ? 0.22 : 0.16) * s;
   const pad = (L ? 0.22 : 0) * s;
+
   // your own bracket glyphs, stretched; a plain drawn one only if the model has none
   const delim = (kind, at, left) =>
     handDelimiter(writer, kind, at, T, B, s) ||
     Object.assign(drawnDelimiter(writer, kind, at, dw, T, B, left), { w: dw });
+
   const b = emptyBox();
   let x = 0;
+
   if (L) {
     const g = delim(L, x, true);
     b.items.push({ g, x: 0, y: 0, s: 1 });
     x += g.w + pad;
   }
+
   addBox(b, grid, x, dy);
   x += grid.w;
+
   if (R) {
     x += pad;
     const g = delim(R, x, false);
     b.items.push({ g, x: 0, y: 0, s: 1 });
     x += g.w;
   }
+
   b.w = x;
   b.top = Math.min(b.top, T - 0.04);
   b.bot = Math.max(b.bot, B + 0.04);
+
   return b;
 }
 
@@ -303,6 +289,7 @@ function boxedAtom(writer, a, s, disp) {
   b.w = body.w + 2 * pad;
   b.top = Math.min(b.top, g.minY - 0.03);
   b.bot = Math.max(b.bot, g.maxY + 0.03);
+
   return b;
 }
 
@@ -310,13 +297,16 @@ function struckAtom(writer, a, s, disp) {
   const body = mathAtom(writer, a.body, s, disp);
   const b = emptyBox();
   addBox(b, body, 0, 0);
+
   b.items.push({
     g: markGlyph(writer, 'strike', 0, body.w, body.top, body.bot, axisOf(writer, s), s),
     x: 0,
     y: 0,
     s: 1,
   });
+
   b.w = body.w;
+
   return b;
 }
 
@@ -331,5 +321,6 @@ function ruleAtom(writer, a, s, disp) {
   if (a.over) b.top = Math.min(b.top, y - 0.03);
   else b.bot = Math.max(b.bot, y + 0.03);
   b.w = body.w;
+
   return b;
 }

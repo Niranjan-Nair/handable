@@ -24,7 +24,9 @@ const NUMERIC = new Set([
   'wordSpacing',
   'variantThreshold',
 ]);
+
 const BOOL = new Set(['infer', 'ligatures', 'scan', 'doubleSided']);
+
 const ALIASES = {
   width: 'maxWidth',
   color: 'color',
@@ -61,6 +63,7 @@ function usage() {
   --ligatures true|false use the ligatures you actually wrote joined (default true)
   --scan true|false      plain / lined paper looks like a scanned sheet (default true)
   --double-sided true|false  lined paper: even pages are the backs of sheets, margin on the right (default false)`);
+
   process.exit(1);
 }
 
@@ -70,27 +73,34 @@ let dataPath;
 let outPath;
 let filePath;
 const rest = [];
+
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
+
   if (!a.startsWith('--')) {
     rest.push(a);
     continue;
   }
+
   const key = a.slice(2);
   const val = args[++i];
   if (val === undefined) usage();
+
   if (key === 'data') dataPath = val;
   else if (key === 'out') outPath = val;
   else if (key === 'file') filePath = val;
   else {
     const k = ALIASES[key] || key;
+
     if (!(k in HW.DEFAULTS)) {
       console.error(`unknown option --${key}`);
       usage();
     }
+
     opts[k] = NUMERIC.has(k) ? Number(val) : BOOL.has(k) ? !/^(false|0|no|off)$/i.test(val) : val;
   }
 }
+
 if (!dataPath) usage();
 
 let text = rest.join(' ');

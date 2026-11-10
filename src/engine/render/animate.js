@@ -17,35 +17,44 @@ export function animatedInk(placed, o, penPx, color, maskAttr) {
   let t = 0;
   let k = 0;
   const tv = (v) => `${v.toFixed(3)}s`;
+
   for (const g of placed) {
     for (const st of g.strokes) {
       const len = polyLength(st);
       const op = fmt(g.opacity);
+
       if (len < penPx * 1.2) {
         const dot = uniform ? dotPath(centroid(st), penPx * 0.8) : inkPath(st, penPx);
         out.push(`<path class="hw-d" d="${dot}" fill="${color}" opacity="${op}" style="--d:${tv(t)}"/>`);
         t += 0.03;
         continue;
       }
+
       const dur = Math.max(0.03, len / speed);
       const vars = `style="--d:${tv(t)};--t:${tv(dur)}"`;
+
       if (uniform) {
         out.push(
           `<path class="hw-s" d="${centerPath(st)}" pathLength="1" fill="none" stroke="${color}" stroke-width="${fmt(penPx)}" stroke-linecap="round" stroke-linejoin="round" opacity="${op}" ${vars}/>`,
         );
       } else {
         const mid = `${id}s${k++}`;
+
         out.push(
           `<mask id="${mid}" maskUnits="userSpaceOnUse" x="0" y="0" width="${o.width}" height="${o.height}">` +
             `<path class="hw-s" d="${centerPath(st)}" pathLength="1" fill="none" stroke="#fff" stroke-width="${fmt(penPx * 3)}" stroke-linecap="round" stroke-linejoin="round" ${vars}/></mask>` +
             `<path d="${inkPath(st, penPx)}" fill="${color}" opacity="${op}" mask="url(#${mid})"/>`,
         );
       }
+
       t += dur + 0.012; // lift the pen
     }
+
     t += 0.02; // move on to the next letter
   }
+
   out.push('</g>');
   if (o.animOut) o.animOut.total = Math.max(o.animOut.total || 0, t);
+
   return out.join('');
 }

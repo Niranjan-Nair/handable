@@ -6,6 +6,7 @@ const wordCache = new WeakMap();
 // the cache for these options (o.seed must be set: unseeded writing is never reused)
 export function wordCacheFor(model, o) {
   if (o.seed == null) return null;
+
   // (not the text, which callers may pass in the options too: then every keystroke
   // would start an empty cache)
   const optsKey = JSON.stringify(o, (k, v) => (k === 'rawAt' || k === 'shearDelta' || k === 'text' ? undefined : v));
@@ -17,5 +18,6 @@ export function wordCacheFor(model, o) {
   if (!map || map.size > 20000) map = new Map();
   byOpts.set(optsKey, map);
   if (byOpts.size > 4) byOpts.delete(byOpts.keys().next().value);
+
   return map;
 }

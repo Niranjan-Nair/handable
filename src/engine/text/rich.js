@@ -23,6 +23,7 @@ const SUP_MAP = {
   ⁿ: 'n',
   ⁱ: 'i',
 };
+
 const SUB_MAP = {
   '₀': '0',
   '₁': '1',
@@ -56,6 +57,7 @@ const SUB_MAP = {
 export const FORMAT_TAG = /<(\/?)(sup|sub|u|s|del|strike|box|mark)(?:\s+(?:colou?r\s*=\s*)?["']?([a-z]+)["']?)?\s*>/i;
 // any format tag, for stripping them out of a stretch of text
 export const ANY_FORMAT_TAG = /<\/?(?:sup|sub|u|s|del|strike|box|mark)\b[^<>]*>/gi;
+
 const TAG_HERE = new RegExp('^' + FORMAT_TAG.source, 'i');
 
 // Highlighter colors for <mark …>
@@ -64,20 +66,25 @@ export const HIGHLIGHTS = { yellow: '#ffe14d', pink: '#ff8fc8', orange: '#ffad5c
 // Straight quotes typed on a keyboard -> the curly quote a person would write.
 // An apostrophe is a right single quote (’), so they share one trained glyph.
 const ELISIONS = /^(tis|twas|em|cause|til|bout|round|kay|n'|n\b)/i;
+
 function smartQuote(src, i, q) {
   // the character before, looking through markup like <b>
   let j = i - 1;
+
   while (j >= 0 && src[j] === '>') {
     const k = src.lastIndexOf('<', j);
     if (k < 0 || !/^<\/?[a-z]+[^<>]*>$/i.test(src.slice(k, j + 1))) break;
+
     j = k - 1;
   }
+
   const prev = j >= 0 ? src[j] : '';
   const next = src[i + 1] || '';
   const opening = !prev || /[\s([{\u2014\u2013\-\/“‘"']/.test(prev);
   if (q === '"') return opening ? '“' : '”';
   if (!opening) return '’'; // it's / dogs' / 'quoted'
   if (/\d/.test(next) || ELISIONS.test(src.slice(i + 1, i + 8))) return '’'; // '90s, 'tis
+
   return '‘';
 }
 
@@ -130,6 +137,7 @@ class RichParser {
     this.para.se = this.src.length;
     if (this.gaps.length) this.para.trail = this.gaps;
     if (this.para.words.length || !this.afterDisplay) this.paras.push(this.para);
+
     return this.paras;
   }
 
@@ -139,28 +147,36 @@ class RichParser {
     const c = src[i];
     if (c === '\r') return i + 1;
     if (c === '\n' || c === '\f') return this.paragraphBreak(i);
+
     if (this.mayStartList(i, c)) {
       const j = this.listMarker(i);
       if (j >= 0) return j;
     }
+
     if (c === ' ' || c === '\t') return this.space(i);
     if (i < this.rawUntil) return this.rawChar(i);
     if (this.literal) return this.literalChar(i);
+
     if (c === '\\' && src[i + 1] === '$') {
       this.pushChar('$', null, i, i + 2);
+
       return i + 2;
     }
+
     const span = (c === '$' || c === '\\') && this.spans.get(i);
     if (span) return this.equation(i, span);
+
     if (c === '<') {
       const j = this.tag(i);
       if (j >= 0) return j;
     }
+
     return this.char(i);
   }
 
   deco() {
     const { boxes, marks } = this;
+
     return {
       u: this.u > 0,
       st: this.st > 0,
@@ -177,8 +193,10 @@ class RichParser {
         this.word.gapWs = this.gaps;
         this.gaps = [];
       }
+
       this.para.words.push(this.word);
     }
+
     this.word = [];
   }
 
@@ -196,12 +214,14 @@ class RichParser {
     this.para = { words: [], si: i + 1, newPage: c === '\f' };
     this.gaps = [];
     this.afterDisplay = false;
+
     return i + 1;
   }
 
   // a list item's marker can only come first, after the paragraph's indent (and formats)
   mayStartList(i, c) {
     const { para } = this;
+
     return (
       !para.bullet &&
       !para.display &&
@@ -217,10 +237,12 @@ class RichParser {
   listMarker(i) {
     const m = listMarkerAt(this.src, i);
     if (!m) return -1;
+
     const bullet = { ch: m.ch, ol: m.ol, si: i, se: i + m.len, ws: [] };
     this.para.bullet = bullet;
     let j = i + m.len;
     while (this.src[j] === ' ' || this.src[j] === '\t') bullet.ws.push(j++);
+
     return j;
   }
 
@@ -233,6 +255,7 @@ class RichParser {
     if (leading) (para.lead = para.lead || []).push({ si: i, tab });
     this.endWord();
     if (!leading) this.gaps.push({ si: i, tab });
+
     return i + 1;
   }
 
@@ -242,13 +265,17 @@ class RichParser {
     const src = this.src;
     const span = this.rawSpan;
     const raw = (si, se) => ({ t: 'ch', ch: '$', lv: this.lv.slice(), si, se, raw: true, ...this.deco() });
+
     if (span && src[span.a] === '\\' && (i === span.a || i === span.b - 2)) {
       if (src[i + 1] === '[' || src[i + 1] === ']') this.word.push(raw(i, i + 1), raw(i + 1, i + 2));
       else this.word.push(raw(i, i + 2));
+
       return i + 2;
     }
+
     const cp = String.fromCodePoint(src.codePointAt(i));
     this.word.push({ t: 'ch', ch: cp, lv: this.lv.slice(), si: i, se: i + cp.length, raw: true, ...this.deco() });
+
     return i + cp.length;
   }
 
@@ -258,6 +285,7 @@ class RichParser {
     if (SUP_MAP[cp]) this.pushChar(SUP_MAP[cp], 'sup', i, se);
     else if (SUB_MAP[cp]) this.pushChar(SUB_MAP[cp], 'sub', i, se);
     else this.pushChar(cp === "'" || cp === '"' ? smartQuote(this.src, i, cp) : cp, null, i, se);
+
     return se;
   }
 
@@ -268,24 +296,32 @@ class RichParser {
     const { display, open } = span;
     const close = span.b - open;
     const end = span.b;
+
     if (this.rawAt > i && this.rawAt < end) {
       this.rawUntil = end;
       this.rawSpan = span;
+
       return i;
     }
+
     const node = (tree) => ({ t: 'math', tree, lv: this.lv.slice(), ...this.deco(), display, si: i, se: end });
+
     const pieces = splitMathSrc(this.src, i + open, close).map((pc) => ({
       node: node(parseMath(this.src.slice(pc.a, pc.b))),
       brk: pc.brk,
     }));
+
     if (!pieces.length) pieces.push({ node: node([]), brk: false });
+
     if (display) {
       this.endWord();
       const para = this.para;
+
       if (para.words.length) {
         para.se = i;
         this.paras.push(para);
       }
+
       const words = pieces.map((pc, k) => Object.assign([pc.node], k ? { glue: !pc.brk, brk: pc.brk } : {}));
       this.paras.push({ words, display: true, si: i, se: end, newPage: !para.words.length && !!para.newPage });
       this.para = { words: [], si: end };
@@ -298,9 +334,11 @@ class RichParser {
           this.word.glue = !pc.brk;
           this.word.brk = pc.brk;
         }
+
         this.word.push(pc.node);
       });
     }
+
     return end;
   }
 
@@ -308,6 +346,7 @@ class RichParser {
   tag(i) {
     const m = TAG_HERE.exec(this.src.slice(i, i + 40));
     if (!m) return -1;
+
     const name = m[2].toLowerCase();
     const closing = !!m[1];
     const step = closing ? -1 : 1;
@@ -326,6 +365,7 @@ class RichParser {
       const k = this.lv.lastIndexOf(name);
       if (k >= 0) this.lv.splice(k, 1);
     } else this.lv.push(name);
+
     return i + m[0].length;
   }
 
@@ -348,6 +388,7 @@ class RichParser {
       });
     else if (cp === "'" || cp === '"') this.pushChar(smartQuote(this.src, i, cp), null, i, se);
     else this.pushChar(cp, null, i, se);
+
     return se;
   }
 }

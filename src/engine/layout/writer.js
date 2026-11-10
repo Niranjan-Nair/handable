@@ -15,9 +15,11 @@ function keyedRng(seed) {
   let current = makeRng(base);
   const rng = () => current();
   for (const k of RNG_METHODS) rng[k] = (...args) => current[k](...args);
+
   rng.reseed = (key) => {
     current = makeRng(base + '\u0001' + key);
   };
+
   return rng;
 }
 
@@ -26,6 +28,7 @@ export function createWriter(model, o) {
   const rng = keyedRng(o.seed);
   const r = o.randomness;
   const found = { missing: new Set(), inferred: new Set(), ligatures: new Set() };
+
   const writer = {
     model,
     o,
@@ -45,12 +48,15 @@ export function createWriter(model, o) {
     },
     letterGap() {
       const g = style.letterGap;
+
       return Math.max(0.02 * o.letterSpacing, g.mean * o.letterSpacing + rng.normal() * g.std * Math.min(r, 1.5));
     },
     wordGap() {
       const g = style.wordGap;
+
       return Math.max(0.7 * g.mean * o.wordSpacing, g.mean * o.wordSpacing + rng.normal() * g.std * Math.min(r, 1.5));
     },
   };
+
   return writer;
 }

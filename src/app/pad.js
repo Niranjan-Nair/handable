@@ -35,6 +35,7 @@ export class Pad {
   }
   toUnits(e) {
     const r = this.c.getBoundingClientRect();
+
     // measured from inside the pad's border (pads are drawn as boxes)
     return [
       (e.clientX - r.left - this.c.clientLeft - this.cfg.originX) / this.cfg.unit,
@@ -49,9 +50,12 @@ export class Pad {
       e.preventDefault();
       const [x, y] = this.toUnits(e);
       this.tapHandler(x, y, e);
+
       return;
     }
+
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+
     e.preventDefault();
     this.c.setPointerCapture(e.pointerId);
     if (this.t0 == null) this.t0 = e.timeStamp || performance.now();
@@ -62,12 +66,14 @@ export class Pad {
   }
   move(e) {
     if (!this.cur) return;
+
     const evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
     for (const ev of evs.length ? evs : [e]) this.addPoint(ev);
     this.draw();
   }
   up() {
     if (!this.cur) return;
+
     this.cur = null;
     if (this.onChange) this.onChange();
   }
@@ -109,18 +115,23 @@ export class Pad {
     ctx.fillStyle = color;
     ctx.lineWidth = 0.05 * this.cfg.unit;
     ctx.lineCap = ctx.lineJoin = 'round';
+
     if (s.length === 1) {
       const [x, y] = this.toPx(s[0][0], s[0][1]);
       ctx.beginPath();
       ctx.arc(x, y, ctx.lineWidth / 2, 0, Math.PI * 2);
       ctx.fill();
+
       return;
     }
+
     ctx.beginPath();
+
     s.forEach((p, i) => {
       const [x, y] = this.toPx(p[0], p[1]);
       i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
     });
+
     ctx.stroke();
   }
   draw() {
@@ -134,10 +145,13 @@ export class Pad {
     this.line(b, '#7f9fbf');
     this.line(b + 0.5 * u, '#c3d3e2', [2, 4]);
     if (this.underlay) this.underlay(ctx, this);
+
     if (this.overlay) {
       this.overlay(ctx, this);
+
       return;
     }
+
     for (const s of this.strokes) this.drawStroke(s, '#45484e');
   }
 }

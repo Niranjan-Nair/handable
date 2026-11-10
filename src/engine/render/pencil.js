@@ -28,27 +28,33 @@ export function pencilSVG(placed, o, penPx, maskAttr) {
   const id = 'hw' + (o.idSuffix || '0') + 'p';
   const out = [pencilFilter(id, R, o, penPx), `<g filter="url(#${id})"${maskAttr}>`];
   const state = { rng: makeRng((o.grainSeed || 1) * 7919 + 13) };
+
   for (const g of placed) {
     if (!g.glyph || !g.key) {
       out.push(...glyphGraphite(g, state, penPx, pc, o));
       continue;
     }
+
     // drawn once at its own origin, kept, and moved into place
     let byKey = pencilCache.get(g.glyph);
     if (!byKey) pencilCache.set(g.glyph, (byKey = new Map()));
     const key = [o.grainSeed || 1, g.key, g.ps, g.opacity, penPx, pc].join('|');
     let drawn = byKey.get(key);
+
     if (drawn == null) {
       const atOrigin = {
         ...g,
         strokes: g.glyph.strokes.map((st) => st.map((p) => ({ x: p.x * g.ps, y: p.y * g.ps, w: p.w }))),
       };
+
       drawn = glyphGraphite(atOrigin, state, penPx, pc, o).join('');
       if (byKey.size > 64) byKey.clear();
       byKey.set(key, drawn);
     }
+
     out.push(`<g transform="translate(${fmt(g.ox)} ${fmt(g.oy)})">${drawn}</g>`);
   }
+
   return out.join('\n');
 }
 
@@ -56,6 +62,7 @@ function pencilFilter(id, R, o, penPx) {
   const color = escapeAttr(o.color);
   const seed = o.grainSeed || 1;
   const freq = clamp(2.4 / Math.max(penPx, 0.5), 0.45, 1.8);
+
   return (
     `<defs><filter id="${id}" filterUnits="userSpaceOnUse" x="${R.x}" y="${R.y}" width="${R.w}" height="${R.h}" color-interpolation-filters="sRGB">` +
     // amount of graphite (alpha only), softened a little so the edges become a
@@ -95,13 +102,16 @@ function glyphGraphite(g, state, penPx, pc, o) {
   // keeps only a little of its own level (its variation along the stroke is kept,
   // but evened out too)
   const lines = profiles.filter((q) => !q.dot);
+
   const gMean = lines.length
     ? lines.reduce((t, q) => t + q.mean * q.len, 0) / lines.reduce((t, q) => t + q.len, 0)
     : 0.74;
+
   for (const q of profiles) {
     if (q.dot) out.push(...graphiteDot(q.st, rng, penPx, glyphP));
     else out.push(...graphiteStroke(q, rng, penPx, pc, glyphP, gMean));
   }
+
   return out;
 }
 
@@ -110,6 +120,7 @@ function glyphGraphite(g, state, penPx, pc, o) {
 function pressureProfile(st, penPx) {
   const len = polyLength(st);
   if (st.length < 2 || len < penPx * 1.2) return { dot: true, st };
+
   const n = Math.max(4, Math.ceil(len / Math.max(2, penPx * 0.8)));
   const press = len < penPx * 4; // dot-like flick: pressed, not eased in and out
   const P = resample(st, n);
@@ -118,6 +129,7 @@ function pressureProfile(st, penPx) {
   // fades at touch-down / lift-off never take over a short stroke
   const tIn = Math.min(penPx * 3, len * 0.15);
   const tOut = Math.min(penPx * 6, len * 0.3);
+
   const raw = P.map((pt, i) => {
     const a = P[Math.max(0, i - 2)];
     const b = P[Math.min(n - 1, i + 2)];
@@ -126,9 +138,12 @@ function pressureProfile(st, penPx) {
     const w = pt.w == null ? 1 : pt.w; // >1: written slowly, <1: fast
     const touch = press ? 1 : Math.min(1, Math.sqrt(cum[i] / tIn));
     const lift = press ? 1 : Math.min(1, Math.pow((len - cum[i]) / tOut, 0.7));
+
     return { core: 0.74 + 0.3 * (w - 1) + 0.07 * down, fade: (0.6 + 0.4 * touch) * (0.5 + 0.5 * lift) };
   });
+
   const mean = raw.reduce((t, r) => t + r.core, 0) / raw.length;
+
   return { st, len, n, press, P, raw, mean };
 }
 
@@ -136,6 +151,7 @@ function pressureProfile(st, penPx) {
 function graphiteDot(st, rng, penPx, glyphP) {
   const c = centroid(st);
   const rad = penPx * 0.75;
+
   return [
     `<path d="${dotPath(c, rad)}" fill="#000" opacity="${fmt(0.65 * glyphP)}"/>`,
     `<path d="${dotPath({ x: c.x + rng.normal() * 0.15 * rad, y: c.y + rng.normal() * 0.15 * rad }, rad * 0.65)}" fill="#000" opacity="${fmt(0.65 * glyphP)}"/>`,
@@ -149,36 +165,48 @@ function graphiteStroke(q, rng, penPx, pc, glyphP, gMean) {
   const out = [];
   const strokeP = clamp(1 + rng.normal() * 0.025 * (1.2 - pc), 0.93, 1.07);
   const level = gMean + 0.25 * (q.mean - gMean);
+
   const pressure = raw.map((r) => ({
     v: clamp((level + 0.6 * (r.core - q.mean)) * strokeP * glyphP * r.fade, 0.2, 1),
   }));
+
   smoothSeries(pressure, 'v', 2);
   const pr = pressure.map((t) => t.v);
+
   const normals = P.map((pt, i) => {
     const a = P[Math.max(0, i - 1)];
     const b = P[Math.min(n - 1, i + 1)];
     const tl = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+
     return { x: -(b.y - a.y) / tl, y: (b.x - a.x) / tl };
   });
+
   const hw = pr.map((p) => (penPx / 2) * (0.7 + 0.4 * p));
+
   // faint body: continuous coverage under the fibers
   const body = inkPath(
     P.map((pt, i) => ({ x: pt.x, y: pt.y, w: 0.85 * (0.7 + 0.4 * pr[i]) })),
     penPx,
   );
+
   out.push(`<path d="${body}" fill="#000" opacity="${fmt((press ? 0.45 : 0.22) * strokeP * glyphP)}"/>`);
   const segPts = Math.max(3, Math.round((penPx * 4) / (len / n)));
+
   for (let f = 0; f < FIBERS; f++) {
     const u = ((f + 0.5) / FIBERS - 0.5) * 1.6; // across the width
     const gain = 0.88 + 0.16 * rng() - 0.12 * Math.abs(u); // outer fibers a bit lighter
     let wobble = 0;
+
     const pts = P.map((pt, i) => {
       wobble = wobble * 0.92 + rng.normal() * 0.05;
       const k = (u + wobble) * hw[i];
+
       return { x: pt.x + normals[i].x * k, y: pt.y + normals[i].y * k };
     });
+
     // runs of the fiber grouped by how dark they are, one path per level
     const byLevel = {};
+
     for (let a = 0; a < n - 1; a += segPts) {
       const b = Math.min(n - 1, a + segPts);
       let avg = 0;
@@ -186,14 +214,17 @@ function graphiteStroke(q, rng, penPx, pc, glyphP, gMean) {
       avg /= b - a + 1;
       const lvl = clamp(Math.round(avg * gain * LEVELS), 0, LEVELS);
       if (!lvl) continue;
+
       let d = `M${f1(pts[a].x)} ${f1(pts[a].y)}`;
       for (let i = a + 1; i <= b; i++) d += `L${f1(pts[i].x)} ${f1(pts[i].y)}`;
       (byLevel[lvl] = byLevel[lvl] || []).push(d);
     }
+
     for (const lvl of Object.keys(byLevel))
       out.push(
         `<path d="${byLevel[lvl].join('')}" fill="none" stroke="#000" stroke-width="${fmt(penPx * 0.5)}" stroke-linejoin="round" opacity="${fmt((0.5 * lvl) / LEVELS)}"/>`,
       );
   }
+
   return out;
 }

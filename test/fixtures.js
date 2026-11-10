@@ -4,14 +4,18 @@
 // small deterministic PRNG (mulberry32), independent of the engine's own
 function prng(seed) {
   let a = seed >>> 0;
+
   const next = () => {
     a = (a + 0x6d2b79f5) >>> 0;
     let t = a;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+
   next.normal = () => Math.sqrt(-2 * Math.log(next() || 1e-9)) * Math.cos(2 * Math.PI * next());
+
   return next;
 }
 
@@ -21,13 +25,16 @@ function prng(seed) {
 function trace(glyphs, ch, rand, { x0 = 0, t0 = 0, pen = false, scale = 1 } = {}) {
   const def = glyphs[ch];
   if (!def) return null;
+
   const slant = 0.12 + rand.normal() * 0.02;
   const sx = scale * (1 + rand.normal() * 0.05);
   const sy = scale * (1 + rand.normal() * 0.05);
   let t = t0;
+
   const strokes = def.map((segs) => {
     const pts = segs.flat();
     const out = [];
+
     pts.forEach(([x, y], i) => {
       if (i % 2 && i !== pts.length - 1) return; // thin the skeleton a little
       t += 4 + Math.floor(rand() * 3);
@@ -35,9 +42,12 @@ function trace(glyphs, ch, rand, { x0 = 0, t0 = 0, pen = false, scale = 1 } = {}
       const Y = y * sy + rand.normal() * 0.004;
       out.push([+X.toFixed(4), +Y.toFixed(4), t, pen ? +(0.4 + 0.3 * rand()).toFixed(3) : null]);
     });
+
     t += 60; // pen lift
+
     return out;
   });
+
   return { strokes, t };
 }
 
@@ -47,38 +57,48 @@ export function makeDataset(glyphs) {
   const rand = prng(1234);
   const samples = [];
   let id = 0;
+
   for (const ch of CHARS) {
     const n = 'aeot'.includes(ch) ? 5 : 3;
+
     for (let k = 0; k < n; k++) {
       const s = trace(glyphs, ch, rand, { pen: k === 0 && 'aeiou'.includes(ch), scale: k === 2 ? 1.25 : 1 });
       if (s) samples.push({ id: 'l' + id++, char: ch, ctx: 'solo', source: 'letter', strokes: s.strokes, created: 1 });
     }
   }
+
   // sentence words, some letters joined (the pen kept down from one to the next)
   const sentences = [];
   const words = ['the', 'quick', 'ge', 'ge', 'ge', 'then', 'ing', 'll', 'the'];
+
   words.forEach((w, wi) => {
     let x = 0;
     let t = 0;
     const seqId = 'seq' + wi;
     const chars = Array.from(w);
+
     chars.forEach((ch, i) => {
       const s = trace(glyphs, ch, rand, { x0: x, t0: t });
       const joined = i > 0 && wi % 3 !== 1;
+
       if (joined) {
         // the first stroke starts right where the previous letter's last stroke ended
         const prev = samples[samples.length - 1].strokes;
         const e = prev[prev.length - 1][prev[prev.length - 1].length - 1];
         const f = s.strokes[0][0];
         const dt = f[2] - e[2];
+
         s.strokes.forEach((st) =>
           st.forEach((p) => {
             p[2] -= dt - 10;
           }),
         );
+
         s.strokes[0][0] = [e[0] + 0.01, e[1], e[2] + 10, null];
       }
+
       const ctx = chars.length === 1 ? 'solo' : i === 0 ? 'start' : i === chars.length - 1 ? 'end' : 'mid';
+
       samples.push({
         id: 's' + id++,
         char: ch,
@@ -88,11 +108,14 @@ export function makeDataset(glyphs) {
         strokes: s.strokes,
         created: 2,
       });
+
       x += 0.45;
       t = s.t;
     });
+
     sentences.push({ text: w, letterGaps: [0.08, 0.1, 0.12], wordGaps: [0.45, 0.5], created: 3 });
   });
+
   const marks = [
     {
       id: 'm1',
@@ -123,10 +146,12 @@ export function makeDataset(glyphs) {
       ],
     },
   ];
+
   return { version: 1, samples, sentences, excludedUnits: [], marks };
 }
 
 const LONG = 'Antidisestablishmentarianismically ';
+
 export const TEXTS = {
   plain: 'The quick brown fox jumps over the lazy dog.\nHow vexingly quick daft zebras jump!',
   rich: 'Some <u>underlined words here</u>, <s>struck</s>, <box>boxed</box> and <mark pink>pink</mark> <mark>hi</mark>.\nx<sup>2</sup> H<sub>2</sub>O ² ₂ "quoted" it\'s \'90s',

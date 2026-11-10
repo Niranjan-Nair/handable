@@ -8,9 +8,11 @@
 // undo step), then selects selA … selB
 export function replaceChange(t, t2, selA, selB = selA) {
   if (t2 === t) return { selA, selB };
+
   let p = 0;
   while (p < t.length && p < t2.length && t[p] === t2[p]) p++;
   let q = 0;
   while (q < t.length - p && q < t2.length - p && t[t.length - 1 - q] === t2[t2.length - 1 - q]) q++;
+
   return { a: p, b: t.length - q, str: t2.slice(p, t2.length - q), selA, selB };
 }

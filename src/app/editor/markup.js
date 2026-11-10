@@ -10,15 +10,19 @@ const TAG = new RegExp(HW.FORMAT_TAG.source, 'iy');
 export function tagAt(t, k) {
   TAG.lastIndex = k;
   const m = TAG.exec(t);
+
   return m ? { end: k + m[0].length, closing: !!m[1], name: m[2].toLowerCase(), color: m[3] } : null;
 }
 
 // the start of the format tag ending at k, or -1
 export function tagBefore(t, k) {
   if (t[k - 1] !== '>') return -1;
+
   const j = t.lastIndexOf('<', k - 1);
   if (j < 0) return -1;
+
   const m = tagAt(t, j);
+
   return m && m.end === k ? j : -1;
 }
 
@@ -40,6 +44,7 @@ export const mathTouching = (t, a, b) =>
 // the equation one of whose delimiters ($, $$, \( …) has a character at i, or null
 export function delimiterAt(t, i) {
   if (i < 0) return null;
+
   return mathRanges(t).find((m) => (i >= m.a && i < m.a + m.open) || (i >= m.b - m.open && i < m.b)) || null;
 }
 
@@ -49,12 +54,15 @@ export function stepRight(t, k) {
   let j = k;
   let closingOnly = true;
   let any = false;
+
   for (let m = tagAt(t, j); m; m = tagAt(t, j)) {
     any = true;
     if (!m.closing) closingOnly = false;
     j = m.end;
   }
+
   if (any && closingOnly && j < t.length + 1 && j !== k) return j;
+
   const ms = mathRanges(t);
   const inM = ms.find((m) => k > m.a && k < m.b);
   if (inM && k >= inM.b - inM.open) return inM.b; // out past the closing $
@@ -62,6 +70,7 @@ export function stepRight(t, k) {
   if (at) return at.a + at.open; // into an equation
   if (j >= t.length) return t.length;
   if (t[j] === '\\' && t[j + 1] === '$' && !inM) return j + 2;
+
   return j + cpAt(t, j);
 }
 
@@ -70,15 +79,19 @@ export function stepLeft(t, k) {
   // from the start of an indented paragraph straight to the end of the one before
   const L = leadOf(t, k);
   if (k === L.b && L.b > L.a) return L.a > 0 ? L.a - 1 : k;
+
   let j = k;
   let openingOnly = true;
   let any = false;
+
   for (let q = tagBefore(t, j); q >= 0; q = tagBefore(t, j)) {
     any = true;
     if (tagAt(t, q).closing) openingOnly = false;
     j = q;
   }
+
   if (any && openingOnly && j !== k) return j;
+
   const ms = mathRanges(t);
   const inM = ms.find((m) => k > m.a && k < m.b);
   if (inM && k <= inM.a + inM.open) return inM.a; // out before the opening $
@@ -86,6 +99,7 @@ export function stepLeft(t, k) {
   if (at) return at.b - at.open; // into an equation, at its end
   if (j <= 0) return 0;
   if (t[j - 1] === '$' && t[j - 2] === '\\' && !inM) return j - 2;
+
   return j - cpBefore(t, j);
 }
 
@@ -101,7 +115,9 @@ export function deleteAt(t, k, forward) {
   if (M) return { a: M.a, b: M.b, str: '', selA: M.a };
   if (forward ? j === k || j >= t.length : j === k || j <= 0) return null;
   if (forward) return removeRange(t, j, j + cpAt(t, j), k);
+
   const n = cpBefore(t, j);
+
   return removeRange(t, j - n, j, k - n);
 }
 
@@ -111,6 +127,7 @@ function removeRange(t, a, b, k) {
   const close = tagAt(t, b);
   if (open >= 0 && close && close.closing && !tagAt(t, open).closing && tagAt(t, open).name === close.name)
     return { a: open, b: close.end, str: '', selA: open };
+
   return { a, b, str: '', selA: k };
 }
 
@@ -130,8 +147,10 @@ export function widenOverMath(old, t2) {
   let hi = old.length - q;
   if (hi <= lo) return null; // nothing was taken away
   const hits = (m) => (lo < m.a + m.open && hi > m.a) || (lo < m.b && hi > m.b - m.open);
+
   for (let grew = true; grew;) {
     grew = false;
+
     for (const m of ms) {
       if (hits(m) && (m.a < lo || m.b > hi)) {
         lo = Math.min(lo, m.a);
@@ -140,6 +159,8 @@ export function widenOverMath(old, t2) {
       }
     }
   }
+
   if (lo === p && hi === old.length - q) return null;
+
   return { a: lo, b: hi, str: inserted, selA: lo + inserted.length };
 }

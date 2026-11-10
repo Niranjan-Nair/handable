@@ -10,6 +10,7 @@ export const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 // a message in the status bar, for ms milliseconds
 let statusTimer;
+
 export function status(msg, ms = 2500) {
   $('#status').textContent = msg;
   clearTimeout(statusTimer);

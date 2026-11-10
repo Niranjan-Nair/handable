@@ -22,12 +22,15 @@ export function charBox(writer, ch, s, ctx = 'solo', extra = {}) {
   const b = emptyBox();
   let g = synthGlyph(model, ch, ctx, rng, o, extra);
   if (g && extra.font) g = styleGlyph(g, extra.font, rng, r);
+
   if (!g) {
     writer.note('missing', ch);
     b.w = style.meanWidth * 0.9 * s;
     b.top = -X * s;
+
     return { b, g: null };
   }
+
   if (g.inferred) writer.note('inferred', ch);
   // narrow glyphs (l, i, !, ') get a minimum advance so pairs like "ll" stay apart
   const bodyW = g.bodyMaxX - g.bodyMinX;
@@ -36,6 +39,7 @@ export function charBox(writer, ch, s, ctx = 'solo', extra = {}) {
   b.w = bodyW * s + 2 * pad;
   b.top = g.minY * s;
   b.bot = g.maxY * s;
+
   return { b, g };
 }
 
@@ -43,6 +47,7 @@ export function charBox(writer, ch, s, ctx = 'solo', extra = {}) {
 // underlines, radicals …
 export function handStroke(writer, pts, roughness = 0.35) {
   const dense = [];
+
   for (let k = 1; k < pts.length; k++) {
     const [x0, y0] = pts[k - 1];
     const [x1, y1] = pts[k];
@@ -50,12 +55,14 @@ export function handStroke(writer, pts, roughness = 0.35) {
     for (let q = k > 1 ? 1 : 0; q < n; q++)
       dense.push({ x: x0 + ((x1 - x0) * q) / (n - 1), y: y0 + ((y1 - y0) * q) / (n - 1), w: 1 });
   }
+
   const opts = { ...writer.o, randomness: writer.r * roughness, shearDelta: 0 };
   const g = finishGlyph('—', finishStrokes([dense], writer.rng, opts, 0.6));
   // keep the stroke where it was drawn (finishGlyph left-aligns)
   const minX = Math.min(...pts.map((p) => p[0]));
   for (const s of g.strokes) for (const p of s) p.x += minX;
   g.width += Math.max(0, minX);
+
   return g;
 }
 
@@ -66,10 +73,12 @@ export function ruleStroke(writer, len) {
   const tilt = rng.normal() * 0.01 * r * len;
   const n = 6;
   const pts = [];
+
   for (let k = 0; k < n; k++) {
     const t = k / (n - 1);
     pts.push([t * len, bow * Math.sin(Math.PI * t) + tilt * (t - 0.5)]);
   }
+
   return handStroke(writer, pts);
 }
 
@@ -79,6 +88,7 @@ export function ruleStroke(writer, len) {
 export function markGlyph(writer, kind, A, B, T, Bt, mid, k) {
   const pool = writer.model.marks && writer.model.marks[kind];
   if (pool && pool.length) return trainedMark(writer, pool, kind, A, B, T, Bt, mid, k);
+
   return kind === 'strike' ? drawnStrike(writer, A, B, mid, k) : drawnBox(writer, A, B, T, Bt, k);
 }
 
@@ -92,6 +102,7 @@ function trainedMark(writer, pool, kind, A, B, T, Bt, mid, k) {
   const gy = kind === 'box' ? clamp(Math.pow((Bt - T) / Math.max(1e-3, smp.refH * k), 0.45), 1, 2.2) : 1;
   // how far past the text a mark may reach (an odd sample shouldn't run into the next word)
   const lim = (v, m) => clamp(v, -m, m);
+
   const toText = (p) => ({
     x:
       p.kx < 0
@@ -109,14 +120,17 @@ function trainedMark(writer, pool, kind, A, B, T, Bt, mid, k) {
             : T + p.vy * (Bt - T),
     w: 1,
   });
+
   const strokes = finishStrokes(
     smp.strokes.map((st) => st.map(toText)),
     rng,
     { ...o, randomness: r * 0.4, shearDelta: 0 },
     0.6,
   );
+
   const g = { char: '—', strokes, minY: Infinity, maxY: -Infinity };
   let maxX = 0;
+
   for (const st of strokes) {
     for (const q of st) {
       maxX = Math.max(maxX, q.x);
@@ -124,7 +138,9 @@ function trainedMark(writer, pool, kind, A, B, T, Bt, mid, k) {
       g.maxY = Math.max(g.maxY, q.y);
     }
   }
+
   g.width = maxX;
+
   return g;
 }
 
@@ -132,6 +148,7 @@ function drawnStrike(writer, A, B, mid, k) {
   const { rng } = writer;
   const tilt = rng.normal() * 0.03 * k;
   const bow = rng.normal() * 0.02 * k;
+
   return handStroke(
     writer,
     [
@@ -156,6 +173,7 @@ function drawnBox(writer, A, B, T, Bt, k) {
   const y1 = Bt + py;
   // the sides bow a little between the corners, the end runs past the start
   const bow = (a, b) => [(a[0] + b[0]) / 2 + j(), (a[1] + b[1]) / 2 + j()];
+
   const c = [
     [x0 + 0.06 * k * g, y0 + j()],
     [x1 + j(), y0 + j()],
@@ -163,6 +181,7 @@ function drawnBox(writer, A, B, T, Bt, k) {
     [x0 + j(), y1 + j()],
     [x0 + j(), y0 + j()],
   ];
+
   const pts = [
     c[0],
     bow(c[0], c[1]),
@@ -175,5 +194,6 @@ function drawnBox(writer, A, B, T, Bt, k) {
     c[4],
     [x0 + 0.16 * k * g, y0 - 0.03 * k * g + j()],
   ];
+
   return handStroke(writer, pts, 0.45);
 }

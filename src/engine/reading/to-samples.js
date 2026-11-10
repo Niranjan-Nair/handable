@@ -23,16 +23,20 @@ const sentenceSample = (makeId, label, seq, strokes) => ({
 // labeled by readLine / labelGroups. -> { samples, stats, unclear }
 export function sentenceToSamples(groups, text, makeId) {
   if (groups.some((g) => g.label !== undefined)) return labeledToSamples(groups, text, makeId);
+
   const labels = textLabels(text);
   if (labels.length !== groups.length)
     throw new Error(`Expected ${labels.length} characters but found ${groups.length}.`);
   const seqId = (makeId ? makeId() : 's') + ':' + Date.now();
+
   const samples = groups.map((g, i) =>
     sentenceSample(makeId, labels[i], { id: seqId, i, w: labels[i].word }, g.strokes),
   );
+
   const gaps = { letterGaps: [], wordGaps: [] };
   for (let i = 1; i < groups.length; i++)
     recordGap(gaps, groups[i - 1], groups[i], labels[i].word === labels[i - 1].word);
+
   return { samples, stats: { text, ...gaps, created: Date.now() } };
 }
 
@@ -47,17 +51,22 @@ function labeledToSamples(groups, text, makeId) {
   const gaps = { letterGaps: [], wordGaps: [] };
   let run = 0;
   let unclear = 0; // run: which unbroken stretch of letters this is
+
   read.forEach((g, k) => {
     const prev = read[k - 1];
     const L = g.label;
     const follows = prev && prev.sure && g.sure && prev.label.i + 1 === L.i;
     if (!follows || prev.label.word !== L.word) run++;
     if (follows) recordGap(gaps, prev, g, prev.label.word === L.word);
+
     if (!g.sure) {
       unclear++;
+
       return;
     }
+
     samples.push(sentenceSample(makeId, L, { id: seqId, i: L.i, w: L.word + ':' + run }, g.strokes));
   });
+
   return { samples, unclear, stats: { text, ...gaps, created: Date.now() } };
 }

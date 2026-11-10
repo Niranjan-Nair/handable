@@ -9,8 +9,10 @@ import { deleteAt, stepLeft, stepRight, widenOverMath } from '../src/app/editor/
 // a change applied to t -> [text, selection start, selection end]
 function applied(t, c, caret = 0) {
   if (!c || c.a == null) return [t, c && c.selA != null ? c.selA : caret, c && c.selB != null ? c.selB : caret];
+
   const t2 = t.slice(0, c.a) + c.str + t.slice(c.b);
   const end = c.a + c.str.length;
+
   return [t2, c.selA != null ? c.selA : end, c.selB != null ? c.selB : c.selA != null ? c.selA : end];
 }
 
@@ -21,6 +23,7 @@ function press(t, caret, keys) {
     const c = leadKey(t, caret, caret, key, shift);
     [t, caret] = applied(t, c, caret);
   }
+
   return [t, caret];
 }
 

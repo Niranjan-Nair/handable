@@ -71,10 +71,12 @@ test('lists: markers and numbers', () => {
   assert.equal(HW.listMarkerAt('<ul &gt;&amp;> x', 0).ch, '>&');
   assert.deepEqual(HW.listMarkerAt('<ol (i)> x', 0).ol, { pre: '(', kind: 'i', post: ')', start: null });
   assert.equal(HW.listMarkerAt('<ol (i.> x', 0), null);
+
   assert.deepEqual(
     [1, 26, 27, 702].map((n) => HW.listNumber(n, 'a')),
     ['a', 'z', 'aa', 'zz'],
   );
+
   assert.deepEqual(
     [4, 9, 14, 1994].map((n) => HW.listNumber(n, 'I')),
     ['IV', 'IX', 'XIV', 'MCMXCIV'],
@@ -83,10 +85,12 @@ test('lists: markers and numbers', () => {
 
 test('parseRich: indents, gaps and page breaks', () => {
   const [p1, p2, p3] = HW.parseRich('\t  ab  cd \n\fx');
+
   assert.deepEqual(
     p1.lead.map((l) => l.tab),
     [true, false, false],
   );
+
   assert.equal(p1.words.length, 2);
   assert.equal(p1.words[1].gapWs.length, 2, 'both spaces count');
   assert.equal(p1.trail.length, 1);
@@ -97,16 +101,19 @@ test('reading a written line finds its letters', () => {
   const line = [];
   let x = 0;
   let t = 0;
+
   for (const ch of 'the cat') {
     if (ch === ' ') {
       x += 0.5;
       continue;
     }
+
     const s = data.samples.find((q) => q.char === ch && q.source === 'letter');
     for (const st of s.strokes) line.push(st.map((p) => [p[0] + x, p[1], p[2] + t, p[3]]));
     x += 0.5;
     t += 500;
   }
+
   const read = HW.readLine(line, 'the cat', model);
   assert.equal(read.groups.map((g) => (g.label ? g.label.ch : '?')).join(''), 'thecat');
   const { samples } = HW.sentenceToSamples(read.groups, 'the cat');

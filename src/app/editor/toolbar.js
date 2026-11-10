@@ -30,6 +30,7 @@ export function createToolbar(ed) {
       else ed.toggleFormat(k);
     }),
   );
+
   $$('.fmt-bar [data-cmd]').forEach((btn) =>
     btn.addEventListener('click', () => {
       focus();
@@ -44,25 +45,31 @@ export function createToolbar(ed) {
       menu.hidden = true;
       button.setAttribute('aria-expanded', 'false');
     };
+
     button.addEventListener('click', () => {
       menu.hidden = !menu.hidden;
       button.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
       if (!menu.hidden && onOpen) onOpen();
     });
+
     document.addEventListener('mousedown', (e) => {
       if (!menu.hidden && !e.target.closest(group)) close();
     });
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !menu.hidden) close();
     });
+
     return close;
   }
 
   // ---- the highlighter's colors
   const hlMenu = $('.hl-menu');
   const closeHl = popup(hlMenu, $('.fmt-bar .hl-more'), '.hl-group');
+
   $$('.hl-menu button').forEach((b) => {
     keepCaret(b);
+
     b.addEventListener('click', () => {
       focus();
       const c = b.dataset.color;
@@ -89,11 +96,13 @@ export function createToolbar(ed) {
     const shown = ol || ls.ol;
     $$('.list-menu [data-ul]').forEach((b) => b.classList.toggle('on', ul === b.dataset.ul));
     $$('.list-menu [data-kind]').forEach((b) => b.classList.toggle('on', !!ol && ol.kind === b.dataset.kind));
+
     $$('.list-menu [data-form]').forEach((b) => {
       const [pre, post] = FORMS[b.dataset.form];
       b.textContent = pre + HW.listNumber(1, shown.kind) + post;
       b.classList.toggle('on', !!ol && ol.pre === pre && ol.post === post);
     });
+
     const isCustom = ul != null && !BULLETS.includes(ul);
     if (document.activeElement !== custom) custom.value = isCustom ? ul : '';
     custom.classList.toggle('on', isCustom);
@@ -106,10 +115,12 @@ export function createToolbar(ed) {
     type = type || ls.last;
     const [a, b] = sel();
     if (allListed(ed.text(), a, b, type)) return ed.apply(setList(ed.text(), a, b, null));
+
     ls.last = type;
     saveSettings();
     ed.apply(setList(ed.text(), a, b, type === 'ol' ? { ol: { ...ls.ol, start: null } } : { ul: ls.ul }, true));
   }
+
   $('.fmt-bar .list-main').addEventListener('click', () => {
     focus();
     toggleList();
@@ -124,6 +135,7 @@ export function createToolbar(ed) {
     ed.apply(setList(ed.text(), ...sel(), { ul: v }));
     closeList();
   };
+
   // numbers: the kind and how it's written are picked separately, so the menu stays open
   const useNumbers = (change) => {
     const ls = listSettings();
@@ -137,14 +149,17 @@ export function createToolbar(ed) {
     ed.apply(setList(ed.text(), ...sel(), { ol: { ...ol, start: null } }));
     drawListMenu();
   };
+
   $$('.list-menu [data-ul]').forEach((b) => b.addEventListener('click', () => useBullet(b.dataset.ul)));
   $$('.list-menu [data-kind]').forEach((b) => b.addEventListener('click', () => useNumbers({ kind: b.dataset.kind })));
+
   $$('.list-menu [data-form]').forEach((b) =>
     b.addEventListener('click', () => {
       const [pre, post] = FORMS[b.dataset.form];
       useNumbers({ pre, post });
     }),
   );
+
   $('.list-menu .lm-none').addEventListener('click', () => {
     focus();
     ed.apply(setList(ed.text(), ...sel(), null));
@@ -154,27 +169,32 @@ export function createToolbar(ed) {
   // a menu field: Enter (or leaving it) uses it, Escape closes the menu
   const field = (input, use) => {
     input.addEventListener('change', use);
+
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
         use();
       }
+
       if (e.key === 'Escape') {
         closeList();
         focus();
       }
     });
   };
+
   // your own marker
   field(custom, () => {
     const v = custom.value.replace(/\s+/g, '');
     if (v) useBullet(v);
   });
+
   // where the item's numbering starts (empty: counting on from the item before)
   field(startIn, () => {
     const v = startIn.value.trim();
     const n = v === '' ? null : Math.trunc(+v);
     if (v !== '' && !Number.isFinite(n)) return;
+
     ed.apply(setStart(ed.text(), ...sel(), listSettings().ol, n));
     focus();
     drawListMenu();
@@ -184,11 +204,13 @@ export function createToolbar(ed) {
   function draw() {
     const focused = document.activeElement === ta;
     const f = focused ? ed.formats() : {};
+
     $$('.fmt-bar [data-fmt]').forEach((btn) => {
       const on = !!f[btn.dataset.fmt];
       btn.classList.toggle('on', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+
     const hl = $('.fmt-bar .hl-main');
     if (hl) hl.style.setProperty('--hl', HW.HIGHLIGHTS[(f.mark && f.color) || lastHl]);
     $$('.hl-menu [data-color]').forEach((b) => b.classList.toggle('on', !!f.mark && f.color === b.dataset.color));

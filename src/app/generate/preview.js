@@ -15,6 +15,7 @@ const editor = createEditor({ getResult: () => lastRes, regenerate: () => runGen
 // the options for HW.generate, from the settings
 const genOptions = (extra) => {
   const g = settings.gen;
+
   return { ...g, slant: g.slantOn ? g.slant : null, ...extra };
 };
 
@@ -35,14 +36,19 @@ export function runGen() {
   clearTimeout(genTimer);
   genTimer = null;
   if (ui.tab !== 'generate') return;
+
   const pv = $('#g-preview');
+
   if (!data.samples.length) {
     pv.innerHTML =
       '<p class="muted empty">There\'s nothing to write with yet. Go to Train and write some characters first.</p>';
+
     $('#g-missing').textContent = '';
     $('#g-inferred').textContent = '';
+
     return;
   }
+
   const t0 = performance.now();
   // on paper, the page comes as layers (see showLayers); the whole pages, for
   // downloads, are written when one is asked for (fullRes)
@@ -52,9 +58,11 @@ export function runGen() {
   showSheets(pv, res);
   editor.draw();
   $('#g-pages').textContent = res.page ? `${res.nPages} page${res.nPages > 1 ? 's' : ''}` : '';
+
   $('#g-missing').textContent = res.missing.length
     ? `Left blank because the app can't write them: ${res.missing.join(' ')}`
     : '';
+
   $('#g-inferred').textContent = [
     res.ligatures.length ? `Joined the way you join them: ${res.ligatures.join(' ')}.` : '',
     res.inferred.length ? `Worked out from your other letters: ${res.inferred.join(' ')}` : '',
@@ -68,24 +76,30 @@ function showSheets(pv, res) {
   pv.classList.toggle('paged', !!res.page);
   const kind = res.layers ? 'sheet layered' : res.page ? 'sheet' : 'sheet free';
   let have = [...pv.children].filter((el) => el.classList.contains('sheet'));
+
   if (have.length !== pv.children.length || have.some((el) => el.className !== kind)) {
     pv.innerHTML = '';
     have = [];
   }
+
   const n = res.layers ? res.layers.length : 1;
+
   for (let i = 0; i < n; i++) {
     let el = have[i];
+
     if (!el) {
       el = document.createElement('div');
       el.className = kind;
       pv.appendChild(el);
     }
+
     if (res.layers) showLayers(el, res.layers[i], res.width, res.height);
     else if (el._svg !== res.svg) {
       el.innerHTML = res.svg;
       el._svg = res.svg;
     }
   }
+
   for (let i = n; i < have.length; i++) {
     dropLayers(have[i]);
     have[i].remove();
@@ -100,8 +114,10 @@ function showLayers(el, L, W, H) {
   if (el._paper !== L.paper) showPaper(el, L.paper, W);
   const old = el._strips || new Map();
   const now = new Map();
+
   for (const s of L.strips) {
     let d = old.get(s.svg);
+
     if (d) old.delete(s.svg);
     else {
       d = document.createElement('div');
@@ -111,8 +127,10 @@ function showLayers(el, L, W, H) {
       d.innerHTML = s.svg;
       el.appendChild(d);
     }
+
     now.set(s.svg, d);
   }
+
   for (const d of old.values()) d.remove();
   el._strips = now;
 }
@@ -125,15 +143,18 @@ function showPaper(el, paper, W) {
   img.alt = '';
   img.width = W;
   img.src = url;
+
   // the new paper replaces the old once it's ready, so there's no blank frame
   const swap = () => {
     if (el._paper !== paper) return URL.revokeObjectURL(url);
+
     const old = el.querySelector('img.paper');
     if (old) {
       URL.revokeObjectURL(old.src);
       old.replaceWith(img);
     } else el.prepend(img);
   };
+
   // (the first paper goes in straight away: it gives the page its size)
   if (!el.querySelector('img.paper')) swap();
   else img.decode().then(swap, swap);
@@ -154,18 +175,24 @@ $('#g-reroll').onclick = () => {
   saveSettings();
   runGen();
 };
+
 $('#g-download').onclick = () => {
   if (lastRes) download(fullRes().svg, 'handwriting.svg', 'image/svg+xml');
 };
+
 $('#g-pdf').onclick = async () => {
   if (!lastRes) return;
+
   const res = fullRes();
   const btn = $('#g-pdf');
+
   // paper: Letter / A4 sheets; transparent: one page the size of the writing (at 96 px/in)
   const size = res.page
     ? { pxW: res.width, pxH: res.height, ptW: res.page.widthIn * 72, ptH: res.page.heightIn * 72, scale: 1.25 }
     : { pxW: res.width, pxH: res.height, ptW: res.width * 0.75, ptH: res.height * 0.75, scale: 2.5 };
+
   btn.disabled = true;
+
   try {
     const blob = await svgPagesToPDF(res.pages, {
       ...size,
@@ -173,6 +200,7 @@ $('#g-pdf').onclick = async () => {
         btn.textContent = `Making page ${i} of ${n}`;
       },
     });
+
     download(blob, 'handwriting.pdf');
     status(`PDF saved (${res.pages.length} page${res.pages.length > 1 ? 's' : ''})`);
   } catch (err) {
@@ -182,8 +210,10 @@ $('#g-pdf').onclick = async () => {
     btn.textContent = 'Download PDF';
   }
 };
+
 $('#g-copy').onclick = async () => {
   if (!lastRes) return;
+
   try {
     await navigator.clipboard.writeText(fullRes().svg);
     status('SVG copied');

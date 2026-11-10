@@ -14,29 +14,35 @@ export function highlightPath(x0, x1, y0, y1, color, rng) {
   const tilt = rng.normal() * 0.05 * h;
   const dy = (x) => tilt * ((x - x0) / len - 0.5);
   const out = [];
+
   // polygon from points [x, y] (drift applied), drawn at opacity op
   const poly = (pts, op) => {
     out.push(
       `<path d="M${pts.map(([x, y]) => `${fmt(x)} ${fmt(y + dy(x))}`).join('L')}Z" fill="${color}" opacity="${op}"/>`,
     );
   };
+
   // the band between heights a..b (fractions of h), with gently wobbling edges
   const band = (a, b, op, inset = 0) => {
     const n = Math.max(2, Math.round(len / (h * 0.8)));
     const top = [];
     const bot = [];
+
     for (let i = 0; i <= n; i++) {
       const t = i / n;
       const x = x0 + inset + (len - 2 * inset) * t;
       top.push([x + slant * (1 - a), y0 + a * h + rng.normal() * 0.025 * h]);
       bot.push([x + slant * (1 - b), y0 + b * h + rng.normal() * 0.025 * h]);
     }
+
     poly(top.concat(bot.reverse()), op);
   };
+
   // a pool at one end: a parallelogram of width w following the chisel slant
   const pool = (atStart, w, op, bulge) => {
     const xt = atStart ? x0 + slant : x1 + slant - w;
     const xb = atStart ? x0 : x1 - w;
+
     poly(
       [
         [xt, y0 - bulge],
@@ -47,6 +53,7 @@ export function highlightPath(x0, x1, y0, y1, color, rng) {
       op,
     );
   };
+
   band(0, 1, 0.34); // the stroke
   band(0, 0.09, 0.07); // ink at the top edge
   band(0.91, 1, 0.07); // and the bottom edge
@@ -61,5 +68,6 @@ export function highlightPath(x0, x1, y0, y1, color, rng) {
   // lifting off: a lighter, narrower pool
   pool(false, 0.32 * h, 0.08, 0.015 * h);
   pool(false, 0.13 * h, 0.08, 0.02 * h);
+
   return out.join('');
 }

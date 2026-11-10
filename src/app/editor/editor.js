@@ -34,19 +34,25 @@ export function createEditor({ getResult, regenerate }) {
   // undo history.
   function apply(c) {
     if (!c) return;
+
     if (c.a == null) {
       if (c.selA == null) return;
+
       ta.setSelectionRange(c.selA, c.selB == null ? c.selA : c.selB);
       changed();
+
       return;
     }
+
     ta.focus();
     ta.setSelectionRange(c.a, c.b);
     const ok = c.str ? document.execCommand('insertText', false, c.str) : document.execCommand('delete');
+
     if (!ok) {
       ta.setRangeText(c.str, c.a, c.b, 'end');
       ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
+
     if (c.selA != null) ta.setSelectionRange(c.selA, c.selB == null ? c.selA : c.selB);
     changed();
   }
@@ -58,14 +64,19 @@ export function createEditor({ getResult, regenerate }) {
       const L = leadOf(text(), ta.selectionStart);
       if (ta.selectionStart < L.b) ta.setSelectionRange(L.b, L.b);
     }
+
     const m =
       document.activeElement === ta && ta.selectionStart === ta.selectionEnd ? mathAround(text(), focusPos()) : null;
+
     const key = (x) => (x ? x.a + ':' + x.b : '');
+
     if (key(m) !== key(raw)) {
       raw = m;
       regenerate();
+
       return;
     }
+
     draw();
   }
 
@@ -89,6 +100,7 @@ export function createEditor({ getResult, regenerate }) {
 
   // ---- keys
   const plain = (e) => !e.altKey && !e.ctrlKey && !e.metaKey;
+
   // the caret keys: they move over what's written, not over the markup
   function moveKey(e) {
     const M = map();
@@ -96,21 +108,26 @@ export function createEditor({ getResult, regenerate }) {
     const key = e.key;
     const home = key === 'Home' || (e.metaKey && key === 'ArrowLeft');
     const end = key === 'End' || (e.metaKey && key === 'ArrowRight');
+
     if (home || end) {
       const li = (caretAt(M, text(), k) || { line: 0 }).line;
       const cs = charsOn(M, li);
       const L = M.lines[li];
       goalX = null;
       moveTo(home ? (cs.length ? cs[0].s : L.si) : cs.length ? cs[cs.length - 1].e : L.se, e.shiftKey);
+
       return true;
     }
+
     if ((key === 'ArrowLeft' || key === 'ArrowRight') && plain(e)) {
       goalX = null;
       if (ta.selectionStart !== ta.selectionEnd && !e.shiftKey)
         moveTo(key === 'ArrowLeft' ? ta.selectionStart : ta.selectionEnd);
       else moveTo(key === 'ArrowLeft' ? stepLeft(text(), k) : stepRight(text(), k), e.shiftKey);
+
       return true;
     }
+
     if ((key === 'ArrowUp' || key === 'ArrowDown') && plain(e)) {
       const p = caretAt(M, text(), k);
       if (!p) return true;
@@ -118,30 +135,40 @@ export function createEditor({ getResult, regenerate }) {
       const gx = goalX;
       moveTo(lineStep(M, text(), p, gx, key === 'ArrowUp' ? -1 : 1), e.shiftKey);
       goalX = gx;
+
       return true;
     }
+
     return false;
   }
 
   // the shortcuts, as in Google Docs
   const FORMAT_KEYS = { u: 'u', '.': 'sup', ',': 'sub' };
   const SHIFT_FORMAT_KEYS = { x: 's', h: 'mark' };
+
   function shortcut(e) {
     if (!(e.metaKey || e.ctrlKey) || e.altKey) return false;
+
     // ⌘⇧8 bullets, ⌘⇧7 numbers
     if (e.shiftKey && (e.code === 'Digit8' || e.code === 'Digit7')) {
       toolbar.toggleList(e.code === 'Digit8' ? 'ul' : 'ol');
+
       return true;
     }
+
     // ⌘Enter: a page break (a form feed in the text), on paper
     if (e.key === 'Enter' && !e.shiftKey) {
       if (settings.gen.paper !== 'none' && !mathAround(text(), ta.selectionStart))
         apply({ a: ta.selectionStart, b: ta.selectionEnd, str: '\f' });
+
       return true;
     }
+
     const k = (e.shiftKey ? SHIFT_FORMAT_KEYS : FORMAT_KEYS)[e.key.toLowerCase()];
     if (!k) return false;
+
     ed.toggleFormat(k, k === 'mark' ? ed.formats().color || toolbar.lastHighlight() : undefined);
+
     return true;
   }
 
@@ -151,32 +178,41 @@ export function createEditor({ getResult, regenerate }) {
     const a = ta.selectionStart;
     const b = ta.selectionEnd;
     const collapsed = a === b;
+
     if (e.key === 'Backspace' && collapsed && plain(e)) {
       return deleteAt(t, focusPos(), false) || leadKey(t, a, b, 'Backspace', e.shiftKey);
     }
+
     if (e.key === 'Delete' && collapsed) return deleteAt(t, focusPos(), true);
     if (!plain(e)) return null;
     if (e.key === 'Tab' || e.key === 'Enter') return leadKey(t, a, b, e.key, e.shiftKey);
+
     if (e.key === ' ' && collapsed) {
       const auto = listAutoformat(t, a);
       if (!auto) return null;
+
       if (auto.ol) {
         const ls = listSettings();
         ls.last = 'ol';
         ls.ol = { pre: auto.ol.pre, kind: auto.ol.kind, post: auto.ol.post };
         saveSettings();
       }
+
       return auto.change;
     }
+
     return null;
   }
 
   ta.addEventListener('keydown', (e) => {
     if (e.isComposing) return;
+
     if (map() && moveKey(e)) {
       e.preventDefault();
+
       return;
     }
+
     goalX = null;
     const change = editKey(e);
     if (change) {
@@ -189,17 +225,22 @@ export function createEditor({ getResult, regenerate }) {
   // the whole equation (see widenOverMath): taken back and done again, as one step.
   let before = null;
   let fixing = false;
+
   ta.addEventListener('beforeinput', () => {
     if (!fixing) before = text();
   });
+
   ta.addEventListener('input', (e) => {
     if (fixing || before == null) return;
+
     const old = before;
     before = null;
     const wide = widenOverMath(old, text());
     if (!wide) return;
+
     e.stopImmediatePropagation();
     fixing = true;
+
     try {
       ta.focus();
       document.execCommand('undo');
@@ -209,11 +250,15 @@ export function createEditor({ getResult, regenerate }) {
       fixing = false;
     }
   });
+
   ['keyup', 'select', 'focus'].forEach((ev) => ta.addEventListener(ev, () => changed()));
+
   document.addEventListener('selectionchange', () => {
     if (document.activeElement === ta) changed();
   });
+
   ta.addEventListener('focus', () => wrap.classList.add('editing'));
+
   ta.addEventListener('blur', () => {
     wrap.classList.remove('editing');
     if (raw) {
@@ -228,6 +273,7 @@ export function createEditor({ getResult, regenerate }) {
     const sh = e.target.closest && e.target.closest('#g-preview .sheet');
     const M = map();
     if (!sh || !M) return text().length;
+
     const page = $$('#g-preview .sheet').indexOf(sh);
     const r = sh.getBoundingClientRect();
     const { width: W, height: H } = getResult();
@@ -235,20 +281,25 @@ export function createEditor({ getResult, regenerate }) {
     let y = ((e.clientY - r.top) / r.height) * H;
     // undo the scan's tilt
     const sk = ((M.skews[page] || 0) * Math.PI) / 180;
+
     if (sk) {
       const dx = x - W / 2;
       const dy = y - H / 2;
       x = W / 2 + dx * Math.cos(sk) + dy * Math.sin(sk);
       y = H / 2 - dx * Math.sin(sk) + dy * Math.cos(sk);
     }
+
     return posAt(M, text(), page, x, y, enterMath);
   }
+
   $('#g-preview').addEventListener('mousedown', (e) => {
     if (e.button !== 0 || !map()) return;
+
     e.preventDefault();
     ta.focus({ preventScroll: true });
     const k = pointerPos(e, e.detail < 2 && !e.shiftKey);
     goalX = null;
+
     if (e.detail === 2) {
       // a double click selects a word
       const t = text();
@@ -266,14 +317,18 @@ export function createEditor({ getResult, regenerate }) {
       anchor = k;
     }
   });
+
   window.addEventListener('mousemove', (e) => {
     if (anchor == null || !(e.buttons & 1)) return;
+
     const k = pointerPos(e, false);
     ta.setSelectionRange(Math.min(anchor, k), Math.max(anchor, k), k < anchor ? 'backward' : 'forward');
     draw();
   });
+
   window.addEventListener('mouseup', () => {
     if (anchor == null) return;
+
     anchor = null;
     changed();
   });

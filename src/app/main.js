@@ -12,18 +12,22 @@ function showTab(name) {
   $$('.tab').forEach((t) => t.classList.toggle('on', t.id === 'tab-' + name));
   if (name === 'train') showTrainTab();
   if (name === 'library') renderLibrary();
+
   if (name === 'generate') {
     updateOutputs();
     runGen();
   }
+
   if (name === 'home') renderHome();
 }
 
 function renderHome() {
   const n = data.samples.length;
+
   const note = n
     ? `Your handwriting model is built from ${n} sample${n === 1 ? '' : 's'}. It gets better as you add more.`
     : "You haven't written any samples yet. Start with a few letters.";
+
   const go = n ? 'Write something' : 'Start training';
   if ($('#home-note').textContent !== note) $('#home-note').textContent = note;
   if ($('#home-go').textContent !== go) $('#home-go').textContent = go;

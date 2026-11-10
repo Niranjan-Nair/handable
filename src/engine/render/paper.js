@@ -10,13 +10,16 @@ export function paperSVG(o) {
   const H = o.height;
   const seed = (o.grainSeed || 1) + 101;
   const out = [paperDefs(id, W, H, seed, o.scan)];
+
   out.push(
     o.scan
       ? `<g filter="url(#${id})"><rect x="-60" y="-60" width="${W + 120}" height="${H + 120}" fill="#fdfdfb"/>`
       : `<g filter="url(#${id})"><rect width="${W}" height="${H}" fill="#fcfaf3"/>`,
   );
+
   if (o.paper === 'lined' && o.page) out.push(o.scan ? scannedRules(id, o, seed) : printedRules(o));
   out.push(o.scan ? '</g>' : `</g><rect width="${W}" height="${H}" fill="url(#${id}v)"/>`);
+
   return out.join('');
 }
 
@@ -24,6 +27,7 @@ export function paperSVG(o) {
 function paperDefs(id, W, H, seed, scan) {
   const lin = (r, g, b, k) =>
     `<feFuncR type="linear" slope="${k}" intercept="${r}"/><feFuncG type="linear" slope="${k}" intercept="${g}"/><feFuncB type="linear" slope="${k}" intercept="${b}"/>`;
+
   return (
     `<defs><filter id="${id}" filterUnits="userSpaceOnUse" x="-60" y="-60" width="${W + 120}" height="${H + 120}" color-interpolation-filters="sRGB">` +
     `<feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" seed="${seed}" result="tooth"/>` +
@@ -49,6 +53,7 @@ const ruleWidth = () => Math.max(1, PAGE_PPI / 115); // ~0.22 mm, like printed r
 function ruleYs(o) {
   const ys = [];
   for (let y = o.page.top; y < o.height - o.page.bottom * 0.3; y += o.lineHeight * o.size) ys.push(y);
+
   return ys;
 }
 
@@ -56,6 +61,7 @@ function ruleYs(o) {
 function printedRules(o) {
   const lw = ruleWidth();
   const { width: W, height: H, page } = o;
+
   return (
     `<g stroke="#8cb0d8" stroke-width="${fmt(lw)}" opacity="0.8">` +
     ruleYs(o)
@@ -73,12 +79,15 @@ function scannedRules(id, o, seed) {
   const lw = ruleWidth();
   const { width: W, height: H, page } = o;
   const rng = makeRng(seed * 31 + 5);
+
   const wave = (amp) => {
     const k = 2 + Math.floor(rng() * 3);
     const ph = rng() * 6.28;
     const a = amp * (0.4 + rng() * 0.6);
+
     return (t) => a * Math.sin(ph + t * k * Math.PI) + a * 0.5 * Math.sin(ph * 1.7 + t * (k + 3) * Math.PI);
   };
+
   const rule = (x0, y0, x1, y1) => {
     const n = 16;
     const dx = x1 - x0;
@@ -87,13 +96,16 @@ function scannedRules(id, o, seed) {
     const f = wave(0.35);
     const tilt = (rng() - 0.5) * 2.2;
     const P = [];
+
     for (let i = 0; i <= n; i++) {
       const t = i / n;
       const off = f(t) + tilt * (t - 0.5);
       P.push({ x: x0 + dx * t - (dy / len) * off, y: y0 + dy * t + (dx / len) * off });
     }
+
     return `M${fmt(P[0].x)} ${fmt(P[0].y)}` + splineSegments(P);
   };
+
   const out = [
     `<filter id="${id}r" filterUnits="userSpaceOnUse" x="-20" y="-20" width="${W + 40}" height="${H + 40}" color-interpolation-filters="sRGB">` +
       `<feTurbulence type="fractalNoise" baseFrequency="0.006 0.09" numOctaves="2" seed="${seed + 5}" result="n"/>` +
@@ -104,18 +116,23 @@ function scannedRules(id, o, seed) {
       `</filter>`,
     `<g filter="url(#${id}r)" fill="none"><g stroke="#8aa8d2" stroke-width="${fmt(lw * 1.5)}" opacity="0.8">`,
   ];
+
   for (const y of ruleYs(o)) {
     const yy = y + (rng() - 0.5) * 0.8;
     out.push(`<path d="${rule(-10, yy, W + 10, yy)}"/>`);
   }
+
   out.push('</g>');
   const mx = page.marginLine + (rng() - 0.5) * 2;
   const md = rule(mx, -10, mx, H + 10);
+
   out.push(
     `<path d="${md}" stroke="#f0c4c7" stroke-width="${fmt(lw * 3.6)}" opacity="0.7"/><path d="${md}" stroke="#de9aa0" stroke-width="${fmt(lw * 1.5)}" opacity="0.75"/></g>`,
   );
+
   return out.join('');
 }
+
 // the scan's effects on the writing alone (the same bend, softening and tone as
 // scanOpen; its noise and shading belong to the paper underneath)
 export function scanInkOpen(o, R) {
@@ -125,6 +142,7 @@ export function scanInkOpen(o, R) {
   const seed = (o.grainSeed || 1) + 211;
   const px = PAGE_PPI / 192;
   const skew = scanSkew(o.grainSeed);
+
   return (
     `<defs><filter id="${id}" filterUnits="userSpaceOnUse" x="${R.x}" y="${R.y}" width="${R.w}" height="${R.h}" color-interpolation-filters="sRGB">` +
     `<feTurbulence type="fractalNoise" baseFrequency="${fmt(1.1 / W, 5)} ${fmt(0.8 / H, 5)}" numOctaves="2" seed="${seed}" result="bend"/>` +
@@ -144,6 +162,7 @@ export function scanInkOpen(o, R) {
 // nobody lays a sheet on the glass perfectly square: a small tilt, a quarter to half a degree
 export function scanSkew(grainSeed) {
   const r0 = makeRng(((grainSeed || 1) + 211) * 13 + 1)();
+
   return (r0 < 0.5 ? -1 : 1) * (0.2 + 0.3 * ((r0 * 2) % 1));
 }
 export function scanOpen(o) {
@@ -153,6 +172,7 @@ export function scanOpen(o) {
   const seed = (o.grainSeed || 1) + 211;
   const px = PAGE_PPI / 192; // the page's own resolution, relative to the default
   const skew = scanSkew(o.grainSeed);
+
   return (
     `<defs><filter id="${id}" filterUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}" color-interpolation-filters="sRGB">` +
     // a gentle bend: one or two slow waves across the page
@@ -182,12 +202,14 @@ export function scanClose(o) {
   // soft fall-off at the edges
   const side = Math.floor(rng() * 4);
   const dark = 0.03 + rng() * 0.03;
+
   const dir = [
     ['0', '0', '1', '0'],
     ['1', '0', '0', '0'],
     ['0', '0', '0', '1'],
     ['0', '1', '0', '0'],
   ][side];
+
   return (
     `</g></g><defs><linearGradient id="${id}l" x1="${dir[0]}" y1="${dir[1]}" x2="${dir[2]}" y2="${dir[3]}">` +
     `<stop offset="0" stop-color="#3c4250" stop-opacity="${fmt(dark, 3)}"/><stop offset="0.18" stop-color="#3c4250" stop-opacity="${fmt(dark * 0.25, 3)}"/><stop offset="0.5" stop-color="#3c4250" stop-opacity="0"/></linearGradient>` +

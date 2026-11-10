@@ -10,6 +10,7 @@ const ASC_CHARS = 'bdhkl';
 const DESC_CHARS = 'gjpqy';
 const UPPER_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const DIGIT_CHARS = '0123456789';
+
 export const classify = (ch) => (UPPER_CHARS.includes(ch) ? 'upper' : DIGIT_CHARS.includes(ch) ? 'digit' : 'lower');
 
 // ------------------------------------------------------ style learning
@@ -21,6 +22,7 @@ function groupMedian(byChar, chars, f) {
   const vals = Array.from(chars)
     .filter((c) => byChar[c])
     .map((c) => median(byChar[c].map(f)));
+
   return { med: median(vals), n: vals.length };
 }
 
@@ -37,6 +39,7 @@ export function learnZones(byChar) {
   const C = shrink(r.med, r.n, 0.9 * A);
   r = groupMedian(byChar, DIGIT_CHARS, top);
   const N = shrink(r.med, r.n, C);
+
   return { X, A, D, C, N };
 }
 
@@ -47,9 +50,11 @@ export function learnShear(byChar) {
     for (const g of byChar[ch])
       g.strokes.forEach((s, i) => {
         const r = resample(s, Math.max(2, Math.ceil(g.lens[i] / 0.03)));
+
         for (let k = 1; k < r.length; k++) {
           const dx = r[k].x - r[k - 1].x;
           const dy = r[k].y - r[k - 1].y;
+
           if (Math.abs(dy) > 2 * Math.abs(dx) && Math.abs(dy) > 1e-5) {
             const l = Math.hypot(dx, dy);
             sx += (-dx / dy) * l;
@@ -57,6 +62,7 @@ export function learnShear(byChar) {
           }
         }
       });
+
   return sw > 0 ? sx / sw : 0;
 }
 
@@ -64,10 +70,13 @@ export function learnShear(byChar) {
 function zoneMap(style, ch) {
   const z = style.zones;
   const cls = classify(ch);
+
   if (cls !== 'lower') {
     const H = cls === 'upper' ? z.C : z.N;
+
     return { fy: (y) => y * H, vs: H, cls };
   }
+
   return {
     fy: (y) => (y >= 0 ? y * (z.D / 0.45) : y >= -0.5 ? y * (z.X / 0.5) : -z.X + (y + 0.5) * ((z.A - z.X) / 0.5)),
     vs: z.X / 0.5,
@@ -80,34 +89,44 @@ export function skeletonTransform(style, ch) {
   const { fy, vs, cls } = zoneMap(style, ch);
   const ax = vs * ((style.aspect && style.aspect[cls]) || 1);
   const sh = style.shear || 0;
+
   return (x, y) => {
     const Y = fy(y);
+
     return { x: x * ax - sh * Y, y: Y };
   };
 }
 
 export function learnAspect(byChar, style) {
   const ratios = { lower: [], upper: [], digit: [] };
+
   for (const ch of Object.keys(byChar)) {
     const b = baseGlyph(ch);
     if (!b || b.width < 0.15) continue;
+
     const { vs, cls } = zoneMap(style, ch);
+
     const uw = median(
       byChar[ch].map((g) => {
         let mn = Infinity;
         let mx = -Infinity;
+
         for (const s of g.strokes)
           for (const p of s) {
             const x = p.x + style.shear * p.y;
             mn = Math.min(mn, x);
             mx = Math.max(mx, x);
           }
+
         return mx - mn;
       }),
     );
+
     ratios[cls].push(uw / (b.width * vs));
   }
+
   const lower = clamp(shrink(median(ratios.lower), ratios.lower.length, 1, 2), 0.5, 2);
+
   return {
     lower,
     // capitals & digits only partly inherit lowercase width habits
@@ -139,10 +158,12 @@ export function normalizeSizes(byChar, style, s) {
     } else sits = Math.abs(medBot) < 0.1;
     const tTop = medTop + (eTop - medTop) * s;
     const tBot = medBot + (eBot - medBot) * s;
+
     for (const g of glyphs) {
       const h = g.maxY - g.minY;
       const newTop = g.minY + (tTop - g.minY) * s;
       const newBot = sits ? g.maxY + (0 - g.maxY) * s : g.maxY + (tBot - g.maxY) * s;
+
       if (h < 0.06 || (b && b.maxY - b.minY < 0.06)) {
         // small marks: fix position only
         const dy = (newTop + newBot) / 2 - (g.minY + g.maxY) / 2;
@@ -151,12 +172,14 @@ export function normalizeSizes(byChar, style, s) {
         const sy = clamp((newBot - newTop) / h, 0.55, 1.8);
         const top0 = g.minY;
         const anchorTop = sits ? newBot - h * sy : newTop;
+
         for (const st of g.strokes)
           for (const p of st) {
             p.y = anchorTop + (p.y - top0) * sy;
             p.x *= sy;
           }
       }
+
       refreshGlyph(g);
     }
   }
@@ -167,10 +190,12 @@ export function learnSpacing(byChar, sentences, style) {
   for (const ch of XHEIGHT_CHARS) if (byChar[ch]) widths.push(median(byChar[ch].map((g) => g.width)));
   let lg = [];
   let wg = [];
+
   sentences.forEach((s) => {
     (s.letterGaps || []).forEach((v) => lg.push(v));
     (s.wordGaps || []).forEach((v) => wg.push(v));
   });
+
   // drop implausible measurements (usually a slightly-off segmentation that still
   // had the right letter count): huge letter gaps, and word gaps that are no
   // bigger than an ordinary letter gap
@@ -183,6 +208,7 @@ export function learnSpacing(byChar, sentences, style) {
   const wgs = wg.length ? robustStats(wg) : null;
   const lgMean = shrink(lgs ? lgs.mean : 0, lgs ? lgs.n : 0, 0.1 * zx, 4);
   const wgMean = shrink(wgs ? wgs.mean : 0, wgs ? wgs.n : 0, 0.42 * zx, 3);
+
   return {
     meanWidth: widths.length ? median(widths) : 0.42,
     letterGap: {

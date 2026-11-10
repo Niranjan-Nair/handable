@@ -18,60 +18,77 @@ const D2R = Math.PI / 180;
 // -- segment builders (each returns an array of segments) --------------------
 function densifyLine(a, b, step = 0.02) {
   const n = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / step) + 1);
+
   return Array.from({ length: n }, (_, i) => [
     a[0] + ((b[0] - a[0]) * i) / (n - 1),
     a[1] + ((b[1] - a[1]) * i) / (n - 1),
   ]);
 }
+
 // polyline: one segment per straight piece
 const L = (...pts) => pts.slice(1).map((p, i) => densifyLine(pts[i], p));
+
 // elliptical arc, angles in degrees, y-down (0 = right, 90 = down, -90 = up).
 // Increasing angle = clockwise on screen.
 const arc = (cx, cy, rx, ry, a0, a1) => {
   const n = Math.max(3, Math.ceil(Math.abs(a1 - a0) / 6) + 1);
+
   return [
     Array.from({ length: n }, (_, i) => {
       const t = (a0 + ((a1 - a0) * i) / (n - 1)) * D2R;
+
       return [cx + rx * Math.cos(t), cy + ry * Math.sin(t)];
     }),
   ];
 };
+
 // smooth Catmull-Rom curve through points (one segment)
 const curve = (...pts) => {
   const out = [];
+
   for (let i = 0; i < pts.length - 1; i++) {
     const p0 = pts[i - 1] || pts[i];
     const p1 = pts[i];
     const p2 = pts[i + 1];
     const p3 = pts[i + 2] || p2;
+
     for (let k = 0; k < 10; k++) {
       const t = k / 10;
       const t2 = t * t;
       const t3 = t2 * t;
+
       const f = (a, b, c, d) =>
         0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+
       out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
     }
   }
+
   out.push(pts[pts.length - 1].slice());
+
   return [out];
 };
+
 const dot = (x, y) => [[[x, y]]];
 
 // stroke: concatenates segment groups; inserts a connecting line where the pen
 // would travel between them without lifting.
 function S(...groups) {
   const segs = [];
+
   for (const g of groups)
     for (const seg of g) {
       const prev = segs[segs.length - 1];
+
       if (prev) {
         const e = prev[prev.length - 1];
         const s = seg[0];
         if (Math.hypot(e[0] - s[0], e[1] - s[1]) > 0.015) segs.push(densifyLine(e, s));
       }
+
       segs.push(seg);
     }
+
   return segs;
 }
 
@@ -490,11 +507,13 @@ const SAME = {
   '∬': '∫',
   '∮': '∫',
 };
+
 for (const k of Object.keys(SAME)) if (!G[k]) G[k] = G[SAME[k]];
 // ∩ is an upside-down ∪
 G['∩'] = [S(L([0, 0], [0, -0.3]), arc(0.23, -0.3, 0.23, 0.3, 180, 360), L([0.46, -0.3], [0.46, 0]))];
 // ------------------------------------------- math: logic, sets, relations, misc
 const ring = (cx, cy, rx, ry) => arc(cx, cy, rx, ry, -90, -450);
+
 Object.assign(G, {
   '∀': [S(L([0, -1], [0.25, 0], [0.5, -1])), S(L([0.11, -0.55], [0.39, -0.55]))],
   '∃': [S(L([0, -1], [0.4, -1], [0.4, 0], [0, 0])), S(L([0.06, -0.5], [0.4, -0.5]))],
@@ -622,8 +641,10 @@ Object.assign(G, {
   '˘': [S(arc(0.13, -0.5, 0.13, 0.1, 180, 0))],
   '⃗': [S(L([0, -0.42], [0.4, -0.42])), S(L([0.3, -0.5], [0.4, -0.42], [0.3, -0.34]))],
 });
+
 G['ℏ'] = G.h.concat([S(L([-0.06, -0.76], [0.2, -0.86]))]);
 G['•'] = [S(dot(0.03, -0.3))];
+
 // multiple integrals: integral signs side by side; closed (contour / surface / volume)
 // integrals add a ring drawn across all of them
 const intSign = (dx) =>
@@ -638,12 +659,16 @@ const intSign = (dx) =>
       [dx, 0.25],
     ),
   );
+
 const multiInt = (n, closed) => {
   const signs = Array.from({ length: n }, (_, k) => intSign(0.2 * k));
   if (!closed) return signs;
+
   const cx = 0.15 + 0.1 * (n - 1);
+
   return signs.concat([S(arc(cx, -0.4, 0.1 + 0.1 * (n - 1), 0.12, -90, -450))]);
 };
+
 G['∬'] = multiInt(2, false);
 G['∭'] = multiInt(3, false);
 G['∮'] = multiInt(1, true);

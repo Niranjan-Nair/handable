@@ -2,11 +2,13 @@
 // { ch, word (its index), ctx (its place in the word: solo, start, mid or end) }.
 export function textLabels(text) {
   const labels = [];
+
   String(text)
     .split(/\s+/)
     .filter(Boolean)
     .forEach((w, wi) => {
       const chars = Array.from(w);
+
       chars.forEach((ch, i) =>
         labels.push({
           ch,
@@ -15,5 +17,6 @@ export function textLabels(text) {
         }),
       );
     });
+
   return labels;
 }

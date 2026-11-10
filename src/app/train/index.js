@@ -19,10 +19,12 @@ export { renderLetterGrid };
 // the tab has just been opened: the pads take their size from the page
 export function showTrainTab() {
   letterPad.resize();
+
   if (ui.trainMode === 'combos' || ui.trainMode === 'sentences') {
     sentencePad.resize();
     fitSentencePad();
   }
+
   if (ui.trainMode === 'marks') {
     markPad.resize();
     buildGuide();
@@ -41,15 +43,18 @@ $$('.seg button').forEach((b) =>
     $('#s-another').hidden = ui.trainMode !== 'sentences';
     $('#marks-mode').hidden = ui.trainMode !== 'marks';
     exitSegEdit();
+
     if (ui.trainMode === 'combos') {
       sentencePad.resize();
       renderComboSuggest();
       setCombo($('#c-combo').value || settings.combo || 'ge');
     }
+
     if (ui.trainMode === 'sentences') {
       sentencePad.resize();
       setPrompt(settings.prompt || 0);
     }
+
     if (ui.trainMode === 'marks') {
       markPad.resize();
       buildGuide();
@@ -61,15 +66,20 @@ $$('.seg button').forEach((b) =>
 // keyboard shortcuts (train tab)
 document.addEventListener('keydown', (e) => {
   if (ui.tab !== 'train') return;
+
   const typing = e.target.matches('input, textarea, select');
   const pad = ui.trainMode === 'letters' ? letterPad : ui.trainMode === 'marks' ? markPad : sentencePad;
+
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !typing) {
     e.preventDefault();
     if (ui.trainMode === 'combos' || ui.trainMode === 'sentences') exitSegEdit();
     pad.undo();
+
     return;
   }
+
   if (typing) return;
+
   if (e.key === 'Escape') {
     if (ui.trainMode === 'combos' || ui.trainMode === 'sentences') exitSegEdit();
     pad.clear();
