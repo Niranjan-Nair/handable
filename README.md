@@ -1,4 +1,4 @@
-# handwrite
+# handable
 
 Try it at **[autohandwrite.vercel.app](https://autohandwrite.vercel.app)**.
 

@@ -3,6 +3,7 @@
 import * as HW from '../engine/index.js';
 import { status } from './dom.js';
 
+// (named for the app's first name, and kept so data saved before still loads)
 const DATA_KEY = 'handwrite.dataset.v1';
 const SETTINGS_KEY = 'handwrite.settings.v1';
 

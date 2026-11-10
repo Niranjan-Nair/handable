@@ -1,5 +1,5 @@
 /*
- * Minimal PDF export for handwrite (browser only, no dependencies).
+ * Minimal PDF export for handable (browser only, no dependencies).
  *
  * Each page SVG is rendered to a canvas at print resolution (so pencil grain,
  * paper texture and ink effects come out exactly as on screen), encoded as JPEG

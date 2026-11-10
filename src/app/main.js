@@ -48,6 +48,6 @@ for (const init of [renderLetterGrid, updateOutputs, renderHome]) {
     try {
         init();
     } catch (e) {
-        console.error('handwrite: start-up step failed', e);
+        console.error('handable: start-up step failed', e);
     }
 }

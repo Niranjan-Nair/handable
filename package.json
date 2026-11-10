@@ -1,5 +1,5 @@
 {
-    "name": "handwrite",
+    "name": "handable",
     "version": "1.0.0",
     "description": "Learns your handwriting from a few samples and writes any text in it, as SVG or PDF.",
     "license": "MIT",
@@ -10,7 +10,7 @@
     "homepage": "https://autohandwrite.vercel.app",
     "type": "module",
     "bin": {
-        "handwrite": "./cli.js"
+        "handable": "./cli.js"
     },
     "scripts": {
         "start": "npx serve .",

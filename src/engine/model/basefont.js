@@ -1,5 +1,5 @@
 /*
- * Base skeleton font: the "pretrained" prior for handwrite.
+ * Base skeleton font: the "pretrained" prior for handable.
  *
  * Single-stroke skeletons for printable ASCII, drawn the way people commonly
  * write print-script letters (stroke order and direction matter). Each stroke is

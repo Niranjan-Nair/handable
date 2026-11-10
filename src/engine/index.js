@@ -1,5 +1,5 @@
 /*
- * handwrite engine
+ * handable engine
  *
  * A small non-parametric generative model of a person's handwriting.
  *
