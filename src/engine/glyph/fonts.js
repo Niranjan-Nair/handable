@@ -7,7 +7,7 @@
 import { bbox, polyLength } from '../geometry.js';
 import { STEP } from '../options.js';
 import { clamp } from '../util.js';
-import { finishGlyph } from './synth.js';
+import { finishGlyph } from './finish.js';
 
 const FONTS = { it: italic, bf: bold, bb: blackboard, cal: script, frak: fraktur };
 

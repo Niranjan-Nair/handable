@@ -2,7 +2,8 @@
 // units relative to its baseline. Items are glyphs { g, x, y, s } (s = scale); cmap
 // records where each source character ended up (for a caret).
 import { styleGlyph } from '../glyph/fonts.js';
-import { finishGlyph, finishStrokes, synthGlyph } from '../glyph/synth.js';
+import { finishGlyph, finishStrokes } from '../glyph/finish.js';
+import { synthGlyph } from '../glyph/synth.js';
 import { STEP } from '../options.js';
 import { clamp } from '../util.js';
 

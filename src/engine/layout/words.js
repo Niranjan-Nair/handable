@@ -1,5 +1,5 @@
 // Words (lists of parsed nodes, see text/rich.js) and list markers, as boxes.
-import { finishGlyph } from '../glyph/synth.js';
+import { finishGlyph } from '../glyph/finish.js';
 import { addBox, emptyBox, handStroke } from './boxes.js';
 import { mathList, SCRIPT } from './math.js';
 import { runBox } from './runs.js';

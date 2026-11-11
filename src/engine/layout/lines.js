@@ -19,7 +19,8 @@ function wordKey(writer, nodes, src) {
         if (nd.se != null && nd.se > b) b = nd.se;
     }
 
-    const str = b > a ? src.slice(a, b) : nodes.map((nd) => nd.ch || '').join('');
+    // (normalized, so é typed as e + ◌́ is the same word as é)
+    const str = b > a ? src.slice(a, b).normalize('NFC') : nodes.map((nd) => nd.ch || '').join('');
     const n = (writer.seen.get(str) || 0) + 1;
     writer.seen.set(str, n);
 

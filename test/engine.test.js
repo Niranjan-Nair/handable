@@ -37,6 +37,22 @@ test('characters it cannot write are reported, and untrained ones are inferred',
     assert.equal(HW.inferInfo(model, 'a'), null);
 });
 
+test('accented letters are your own letters with the accent added, however they were typed', () => {
+    const e = HW.sampleGlyph(model, 'e', { seed: 1 });
+    const é = HW.sampleGlyph(model, 'é', { seed: 1 });
+    assert.ok(é.strokes.length > e.strokes.length, 'the e, and an accent');
+    assert.ok(é.minY < e.minY - 0.05, 'the accent is above it');
+    assert.ok(HW.sampleGlyph(model, '¿', { seed: 1 }).maxY > 0.2, '¿ hangs below the line');
+    const typed = HW.generate(model, 'café', { seed: 1 });
+    assert.deepEqual(typed.missing, []);
+    assert.equal(HW.generate(model, 'cafe\u0301', { seed: 1 }).svg, typed.svg, 'e + a combining accent');
+    assert.deepEqual(HW.generate(model, 'Øl, Łódź, straße, ¡olé!', { seed: 1 }).missing, []);
+});
+
+test('Cyrillic is written too', () => {
+    assert.deepEqual(HW.generate(model, 'Съешь же ещё этих мягких булок', { seed: 1 }).missing, []);
+});
+
 test('paper: page breaks start new pages, long text flows on', () => {
     assert.equal(HW.generate(model, 'one\ftwo\fthree', { seed: 1, paper: 'plain' }).nPages, 3);
     assert.equal(HW.generate(model, 'one\ftwo', { seed: 1 }).nPages, 1, 'no pages without paper');

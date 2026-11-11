@@ -84,7 +84,7 @@ The code is plain ES modules with no build step:
 | `src/app/editor/` | `editor.js` and `toolbar.js` handle the page and its keys; `leads.js` (indents, lists), `formats.js`, `markup.js` (tags, equations, caret steps) and `caret.js` are pure functions of the text, and are unit tested |
 | `src/engine/` | the handwriting engine, used by the app and the CLI; `index.js` is its public API |
 | `src/engine/model/` | learning a model from samples: `build.js`, `samples.js` (variants), `style.js`, `sequences.js` (joins and ligatures), `parts.js` (inferring characters), `marks.js`, `basefont.js` |
-| `src/engine/glyph/` | writing one glyph: `synth.js` (morphing samples, natural variation), `fonts.js` (TeX font styles) |
+| `src/engine/glyph/` | writing one glyph: `synth.js` (morphing samples), `compose.js` (accented and other letters made of parts), `finish.js` (smoothing, natural variation, pen), `fonts.js` (TeX font styles) |
 | `src/engine/text/` | parsing: `rich.js` (formats, lists, indents), `math-spans.js`, `tex.js`, `lists.js` |
 | `src/engine/layout/` | words, equations and lines as boxes, pages, and placing glyphs (`generate.js` runs it all) |
 | `src/engine/render/` | SVG output: ink, pencil, paper and scan effects, highlighter, animation |
@@ -130,7 +130,19 @@ This works like finetuning a pretrained model:
   matches, then moves and scales each piece into place. Segments with no match use the reshaped
   skeleton. The Library tab shows what each inferred character was built from.
 - Training a character directly always replaces its inference. Characters with no skeleton
-  (accented letters, emoji, …) are left blank and reported.
+  (emoji, CJK, …) are left blank and reported.
+
+## Other alphabets (`src/engine/glyph/compose.js`)
+
+- **Accented letters** (é, ñ, ş, ą, ő, ǖ, ệ …) are your own letter with the accent written
+  above or below it. Any letter Unicode splits into a letter and accents works, including text
+  typed with separate combining accents. ı, ø, ł, đ, ħ are your i, o, l, d, h with the dot
+  taken off or a stroke drawn through. æ and œ are two of your letters run together, ¿ and ¡
+  are your ? and ! turned over, and „ ‚ are your quotes dropped to the baseline.
+- **Cyrillic and Greek** letters that look like Latin ones (А, В, Е, о, р …) use your Latin
+  letters. The others have their own skeletons, so they are inferred from your writing.
+- Training any of these characters (Train → Accents, а to я, or Other) replaces what is
+  made for it.
 
 ## Ligatures, joins & letter habits
 

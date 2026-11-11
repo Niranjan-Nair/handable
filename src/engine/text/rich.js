@@ -108,6 +108,19 @@ export function parseRich(text, literal = false, rawAt = -1) {
 
 const isBlank = (s) => /^[ \t]*$/.test(s);
 
+// the character at i with any combining marks typed after it (e + ◌́), as one: é
+function cluster(src, i) {
+    let se = i + String.fromCodePoint(src.codePointAt(i)).length;
+
+    while (se < src.length) {
+        const m = String.fromCodePoint(src.codePointAt(se));
+        if (!/\p{M}/u.test(m)) break;
+        se += m.length;
+    }
+
+    return { cp: src.slice(i, se).normalize('NFC'), se };
+}
+
 class RichParser {
     constructor(src, literal, rawAt) {
         this.src = src;
@@ -287,8 +300,7 @@ class RichParser {
     }
 
     literalChar(i) {
-        const cp = String.fromCodePoint(this.src.codePointAt(i));
-        const se = i + cp.length;
+        const { cp, se } = cluster(this.src, i);
         if (SUP_MAP[cp]) this.pushChar(SUP_MAP[cp], 'sup', i, se);
         else if (SUB_MAP[cp]) this.pushChar(SUB_MAP[cp], 'sub', i, se);
         else this.pushChar(cp === "'" || cp === '"' ? smartQuote(this.src, i, cp) : cp, null, i, se);
@@ -379,8 +391,7 @@ class RichParser {
     // an ordinary character: Unicode super / subscripts and mathematical letters (ℝ, 𝐯)
     // are written as such, straight quotes as curly ones
     char(i) {
-        const cp = String.fromCodePoint(this.src.codePointAt(i));
-        const se = i + cp.length;
+        const { cp, se } = cluster(this.src, i);
         const styled = styledLetter(cp);
         if (SUP_MAP[cp]) this.pushChar(SUP_MAP[cp], 'sup', i, se);
         else if (SUB_MAP[cp]) this.pushChar(SUB_MAP[cp], 'sub', i, se);

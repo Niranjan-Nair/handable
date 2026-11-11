@@ -8,6 +8,10 @@ const CHARSETS = {
     upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
     digits: '0123456789',
     punct: '.,!?‘’“”-:;()&@#$%/+=*', // ’ is also the apostrophe
+    // accented letters are made from the plain ones and these accents, so writing
+    // them is only needed when you write one differently
+    accents: '´`ˆ¨˜¸éèêëàâäçñöôüûùíîïøßæœ¿¡',
+    cyrillic: 'абвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ',
 };
 
 CHARSETS.all = CHARSETS.lower + CHARSETS.upper + CHARSETS.digits + CHARSETS.punct;
