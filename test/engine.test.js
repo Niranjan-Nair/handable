@@ -99,6 +99,19 @@ test('on plain paper, lines sit on the same lines as lined paper, unseen', () =>
     assert.equal(gap(plain), 2 * 48);
 });
 
+test('aligned paragraphs: centered and right-aligned in the room their lines have', () => {
+    const opts = { seed: 1, paper: 'plain' };
+    const lineOf = (text, i) => HW.generate(model, text, opts).caretMap.lines[i];
+    const left = lineOf('hi', 0).x;
+    const center = lineOf('<align center>hi</align>', 0).x;
+    const right = lineOf('<align right>hi</align>', 0).x;
+    assert.ok(left < center && center < right);
+    const res = HW.generate(model, 'x\n<align right>hi</align>', opts);
+    const last = res.caretMap.chars.filter((c) => c.line === 1).at(-1);
+    assert.ok(Math.abs(last.x1 - (res.width - 192)) < 5, 'ends at the right margin');
+    assert.ok(lineOf('x\n<align center>hi</align>', 0).x < 200, 'only its own paragraph');
+});
+
 test('Cyrillic is written too', () => {
     assert.deepEqual(HW.generate(model, 'Съешь же ещё этих мягких булок', { seed: 1 }).missing, []);
 });

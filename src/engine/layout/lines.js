@@ -109,7 +109,7 @@ function hyphenated(nodes, k) {
 
 // All the lines of the text. A line: { words (placed word boxes, each with .x),
 // display, psi / pse (its paragraph's source range), indent, lead, newPage,
-// bullet, hang, trail }.
+// bullet, hang, trail, align ('center' | 'right', when its paragraph is) }.
 export function breakLines(writer, paras, src, maxW, cache) {
     const lines = [];
     const { markers, runW } = listMarkers(writer, paras);
@@ -150,6 +150,7 @@ function breakParagraph(writer, para, { lines, markers, runW, src, maxW, cache }
             newPage: firstLine && !!para.newPage,
             bullet: firstLine ? bullet : null,
             hang,
+            ...(para.align && { align: para.align }),
         });
 
         line = [];

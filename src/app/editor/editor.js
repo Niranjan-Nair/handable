@@ -10,7 +10,7 @@
 //    arrow keys); then its TeX is written instead, in a dashed box
 import { listSettings, saveSettings, settings } from '../store.js';
 import { caretAt, charsOn, lineStep } from './caret.js';
-import { activeFormats, toggleFormat } from './formats.js';
+import { activeFormats, setAlign, toggleFormat } from './formats.js';
 import { leadKey, leadOf, listAutoformat } from './leads.js';
 import { deleteAt, mathAround, stepLeft, stepRight, widenOverMath } from './markup.js';
 
@@ -136,6 +136,7 @@ export function createEditor({ ta, map, redraw, regenerate, toolbar }) {
     // the shortcuts, as in Google Docs
     const FORMAT_KEYS = { u: 'u', '.': 'sup', ',': 'sub' };
     const SHIFT_FORMAT_KEYS = { x: 's', h: 'mark' };
+    const ALIGN_KEYS = { l: 'left', e: 'center', r: 'right' }; // with ⇧
 
     function shortcut(e) {
         if (!(e.metaKey || e.ctrlKey) || e.altKey) return false;
@@ -151,6 +152,15 @@ export function createEditor({ ta, map, redraw, regenerate, toolbar }) {
         if (e.key === 'Enter' && !e.shiftKey) {
             if (settings.gen.paper !== 'none' && !mathAround(text(), ta.selectionStart))
                 apply({ a: ta.selectionStart, b: ta.selectionEnd, str: '\f' });
+
+            return true;
+        }
+
+        // ⌘⇧L, ⌘⇧E, ⌘⇧R: align left, center, right
+        const align = e.shiftKey && ALIGN_KEYS[e.key.toLowerCase()];
+
+        if (align) {
+            apply(setAlign(text(), ta.selectionStart, ta.selectionEnd, align));
 
             return true;
         }

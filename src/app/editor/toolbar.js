@@ -6,6 +6,7 @@
 import * as HW from '../../engine/index.js';
 import { $, $$ } from '../dom.js';
 import { listSettings, saveSettings } from '../store.js';
+import { activeAlign, setAlign } from './formats.js';
 import { allListed, leadOf, setList, setStart } from './leads.js';
 
 // how a number is written: "1." "1)" "(1)"
@@ -281,6 +282,14 @@ export function createToolbar(ed) {
         b.addEventListener('click', () => useSize(+b.dataset.size));
     });
 
+    // ---- alignment (of the paragraphs the selection touches)
+    $$('.fmt-bar [data-align]').forEach((b) =>
+        b.addEventListener('click', () => {
+            focus();
+            ed.apply(setAlign(ed.text(), ...sel(), b.dataset.align));
+        }),
+    );
+
     // the buttons show what's on where the caret is
     function draw() {
         if (document.activeElement !== sizeIn) sizeIn.value = ed.size();
@@ -296,6 +305,14 @@ export function createToolbar(ed) {
         const hl = $('.fmt-bar .hl-main');
         if (hl) hl.style.setProperty('--hl', HW.HIGHLIGHTS[(f.mark && f.color) || lastHl]);
         $$('.hl-menu [data-color]').forEach((b) => b.classList.toggle('on', !!f.mark && f.color === b.dataset.color));
+        const align = focused ? activeAlign(ed.text(), ...sel()) : null;
+
+        $$('.fmt-bar [data-align]').forEach((btn) => {
+            const on = align === btn.dataset.align;
+            btn.classList.toggle('on', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+
         const lm = $('.fmt-bar .list-main');
         const on = focused && !!leadOf(ed.text(), ed.ta.selectionStart).bullet;
         lm.classList.toggle('on', on);

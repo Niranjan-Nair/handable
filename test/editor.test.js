@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { replaceChange } from '../src/app/editor/change.js';
-import { activeFormats, setSize, toggleFormat, toggleMath } from '../src/app/editor/formats.js';
+import { activeAlign, activeFormats, setAlign, setSize, toggleFormat, toggleMath } from '../src/app/editor/formats.js';
 import { leadKey, leadOf, listAutoformat, setList } from '../src/app/editor/leads.js';
 import { deleteAt, stepLeft, stepRight, widenOverMath } from '../src/app/editor/markup.js';
 
@@ -87,6 +87,18 @@ test("sizes: a selection, the stretch at the caret, and back to the text's own",
     assert.equal(applied(t2, setSize(t2, 15, 15, 40, 35))[0], 'one <size 40>two</size> three', 'at the caret');
     assert.equal(applied(t2, setSize(t2, a, b, 35, 35))[0], t, 'the base size needs no tag');
     assert.equal(setSize(t, 1, 1, 50, 35), null, 'at a caret outside any: the whole text');
+});
+
+test('aligning: every paragraph the selection touches, outside list markers', () => {
+    const t = 'one two\nthree\nfour';
+    const [t2, a, b] = applied(t, setAlign(t, 4, 10, 'center'));
+    assert.equal(t2, '<align center>one two</align>\n<align center>three</align>\nfour');
+    assert.equal(t2.slice(a, b).replace(/<[^>]*>/g, ''), 'two\nth', 'the selection stays on the text');
+    assert.equal(activeAlign(t2, a, b), 'center');
+    assert.equal(activeAlign(t2, 0, t2.length), null, 'more than one');
+    assert.equal(applied(t2, setAlign(t2, 0, t2.length, 'left'))[0], t, 'left needs no tag');
+    assert.equal(applied('- item', setAlign('- item', 4, 4, 'right'))[0], '- <align right>item</align>');
+    assert.deepEqual(applied('a\n\nb', setAlign('a\n\nb', 2, 2, 'center')), ['a\n<align center></align>\nb', 16, 16]);
 });
 
 test('the equation button wraps, unwraps, and never pairs with another $', () => {

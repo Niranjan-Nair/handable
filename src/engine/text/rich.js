@@ -53,12 +53,13 @@ const SUB_MAP = {
 };
 
 // A format tag: <sup> <sub> <u> <s> (or <del>, <strike>) <box> <mark> (with a color:
-// <mark pink>, <mark color="pink">) <size> (with a size in px: <size 24>); groups:
-// closing /, name, value (the color or size)
+// <mark pink>, <mark color="pink">) <size> (with a size in px: <size 24>) <align>
+// (a paragraph's: <align center>, <align right>); groups: closing /, name, value (the
+// color, size or alignment)
 export const FORMAT_TAG =
-    /<(\/?)(sup|sub|u|s|del|strike|box|mark|size)(?:\s+(?:colou?r\s*=\s*)?["']?([a-z]+|\d+(?:\.\d+)?)["']?)?\s*>/i;
+    /<(\/?)(sup|sub|u|s|del|strike|box|mark|size|align)(?:\s+(?:colou?r\s*=\s*)?["']?([a-z]+|\d+(?:\.\d+)?)["']?)?\s*>/i;
 // any format tag, for stripping them out of a stretch of text
-export const ANY_FORMAT_TAG = /<\/?(?:sup|sub|u|s|del|strike|box|mark|size)\b[^<>]*>/gi;
+export const ANY_FORMAT_TAG = /<\/?(?:sup|sub|u|s|del|strike|box|mark|size|align)\b[^<>]*>/gi;
 
 const TAG_HERE = new RegExp('^' + FORMAT_TAG.source, 'i');
 
@@ -96,6 +97,7 @@ function smartQuote(src, i, q) {
 // deco: u (underline), st (strikethrough), box (id of the <box> it's in), hl (highlighter color),
 // sz (its size in px, or null: the text's own)
 // Markup: <sup> <sub> <u> <s> <box> <mark pink|orange|yellow|green|blue> <size 24>, Unicode ² ₂,
+// <align center|right> around a paragraph's text (the paragraph gets align: 'center' | 'right'),
 // $…$ inline math, $$…$$ display math (own centered line), \$ for a literal dollar sign.
 // Every node knows where it came from in the text (si … se), and so does every
 // paragraph, so an editor can put a caret on the page. Math is cut into pieces
@@ -143,6 +145,7 @@ class RichParser {
         this.boxSeq = 0;
         this.marks = [];
         this.sizes = [];
+        this.aligns = [];
         // the equation being edited (written as its TeX), and where it ends
         this.rawSpan = null;
         this.rawUntil = -1;
@@ -191,8 +194,13 @@ class RichParser {
         return this.char(i);
     }
 
+    // the formats open here, for a node about to be written (the first in a paragraph
+    // also sets the paragraph's alignment)
     deco() {
         const { boxes, marks } = this;
+        const align = this.aligns[this.aligns.length - 1];
+        const first = !this.para.words.length && !this.word.length;
+        if (first && (align === 'center' || align === 'right')) this.para.align = align;
 
         return {
             u: this.u > 0,
@@ -376,7 +384,10 @@ class RichParser {
         const step = closing ? -1 : 1;
         if (name === 'u') this.u = Math.max(0, this.u + step);
         else if (name === 's' || name === 'del' || name === 'strike') this.st = Math.max(0, this.st + step);
-        else if (name === 'size') {
+        else if (name === 'align') {
+            if (closing) this.aligns.pop();
+            else this.aligns.push((m[3] || 'left').toLowerCase());
+        } else if (name === 'size') {
             if (closing) this.sizes.pop();
             else if (+m[3] > 0) this.sizes.push(+m[3]);
             else return -1; // <size> needs a size

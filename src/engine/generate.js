@@ -30,7 +30,10 @@ export function generate(model, text, userOpts) {
     for (const b of boxes)
         for (const kind of Object.keys(found)) for (const v of b.out.writer.found[kind]) found[kind].add(v);
 
-    let width = pg ? pg.W : Math.ceil(Math.max(placed.usedW * o.size + o.margin, 2 * o.margin));
+    // (without paper, centered or right-aligned text needs the whole width to be centered in)
+    const aligned = !pg && lines.some((L) => L.align);
+    const usedW = aligned ? Math.max(placed.usedW, o.maxWidth / o.size + o.margin / o.size) : placed.usedW;
+    let width = pg ? pg.W : Math.ceil(Math.max(usedW * o.size + o.margin, 2 * o.margin));
     let height = pg ? pg.H : Math.ceil(textHeight(lines, o.size) + o.margin);
 
     // without paper the page grows to take in the boxes

@@ -1,8 +1,8 @@
-// Formats (superscript, subscript, underline, strikethrough, box, highlighter, size)
-// as data. The text is read as a list of atoms (a character, an equation, an escaped
-// \$), each with the stack of formats it's inside (outermost first): { k: 'sup' |
-// 'sub' | 'u' | 's' | 'box' | 'mark' | 'size', v } (v: the highlighter color, which
-// box, or the size). Turning a format on or off changes the atoms' stacks, and the
+// Formats (superscript, subscript, underline, strikethrough, box, highlighter, size,
+// and a paragraph's alignment) as data. The text is read as a list of atoms (a
+// character, an equation, an escaped \$), each with the stack of formats it's inside
+// (outermost first): { k: 'sup' | 'sub' | 'u' | 's' | 'box' | 'mark' | 'size' |
+// 'align', v } (v: the highlighter color, which box, the size, or the alignment). Turning a format on or off changes the atoms' stacks, and the
 // text is written back out with as few tags as possible.
 import { replaceChange } from './change.js';
 import { leadOf } from './leads.js';
@@ -56,7 +56,9 @@ export function atomize(t, upto = -1) {
                           ? 'b' + ++boxSeq
                           : k === 'size'
                             ? String(+m.value)
-                            : '';
+                            : k === 'align'
+                              ? (m.value || 'left').toLowerCase()
+                              : '';
                 stack = stack.concat({ k, v });
             }
 
@@ -76,7 +78,7 @@ export function atomize(t, upto = -1) {
 }
 
 const same = (x, y) => x.k === y.k && x.v === y.v;
-const openTag = (x) => (x.k === 'mark' || x.k === 'size' ? `<${x.k} ${x.v}>` : `<${x.k}>`);
+const openTag = (x) => (x.k === 'mark' || x.k === 'size' || x.k === 'align' ? `<${x.k} ${x.v}>` : `<${x.k}>`);
 const closeTag = (x) => `</${x.k}>`;
 
 // the atoms written back out as text; each atom gets na … nb, where it is in it
@@ -183,6 +185,72 @@ export function setSize(t, a, b, size, base) {
     return a === b ? replaceChange(t, t2, sel[0].na + (a - sel[0].a)) : replaceChange(t, t2, sel[0].na, sel.at(-1).nb);
 }
 
+// ---- alignment, a paragraph's: as in Google Docs, aligning a selection aligns every
+// paragraph it touches
+
+// the paragraphs that a … b touches, as a range of text (without their leads)
+function paragraphsOf(t, a, b) {
+    const start = leadOf(t, a).a;
+    const n = t.slice(Math.max(a, b)).search(/[\n\f]/);
+
+    return [start, n < 0 ? t.length : Math.max(a, b) + n];
+}
+
+// the atoms of those paragraphs' text
+function paragraphAtoms(atoms, [start, end]) {
+    return atoms.filter((A) => A.a >= start && A.b <= end && !A.lead && !/[\n\f]/.test(A.t));
+}
+
+const alignOf = (stack) => stack.findLast((x) => x.k === 'align')?.v || 'left';
+
+// the alignment of the paragraphs a … b touches ('left' | 'center' | 'right'), or
+// null when they differ
+export function activeAlign(t, a, b) {
+    const { atoms, at } = atomize(t, a);
+    const own = paragraphAtoms(atoms, paragraphsOf(t, a, b));
+    const aligns = new Set(own.length ? own.map((A) => alignOf(A.stack)) : [alignOf(at)]);
+
+    return aligns.size === 1 ? [...aligns][0] : null;
+}
+
+// Aligns the paragraphs a … b touches ('left' | 'center' | 'right'), keeping the
+// selection where it was. -> a change, or null
+export function setAlign(t, a, b, align) {
+    if (mathAround(t, a) || (a !== b && mathAround(t, b))) return null;
+
+    const { atoms } = atomize(t);
+    const own = paragraphAtoms(atoms, paragraphsOf(t, a, b));
+    const token = { k: 'align', v: align };
+
+    // an empty paragraph: the alignment of what's typed in it
+    if (!own.length) {
+        if (align === 'left') return null;
+
+        const ins = openTag(token);
+
+        return replaceChange(t, t.slice(0, a) + ins + closeTag(token) + t.slice(a), a + ins.length);
+    }
+
+    const unaligned = (A) => A.stack.filter((x) => x.k !== 'align');
+    // (outermost, so its tags go round the paragraph's other formats)
+    for (const A of own) A.stack = (align === 'left' ? [] : [token]).concat(unaligned(A));
+    // a paragraph break is in no paragraph's alignment (so each one's tags close before it)
+    for (const A of atoms) if (/[\n\f]/.test(A.t)) A.stack = unaligned(A);
+    const t2 = serialize(atoms);
+
+    // where position k went: after the letter before it in its paragraph, or before the next
+    const moved = (k) => {
+        const prev = own.find((A) => A.b === k);
+        if (prev) return prev.nb;
+
+        const next = atoms.find((A) => A.a >= k);
+
+        return next ? next.na : t2.length;
+    };
+
+    return replaceChange(t, t2, moved(a), moved(b));
+}
+
 // the atoms next to each other around position k that all pass keep
 function stretchAt(atoms, k, keep) {
     let i = atoms.findIndex((A) => A.b > k);
@@ -262,7 +330,7 @@ function formatOffAtCaret(t, a, k) {
     let t2 = t.slice(0, a) + before + after + t.slice(a);
     let caret = a + before.length;
     // drop formats left empty, except one the caret is in
-    const re = /<(sup|sub|u|s|box|mark|size)\b[^<>]*><\/\1>/g;
+    const re = /<(sup|sub|u|s|box|mark|size|align)\b[^<>]*><\/\1>/g;
 
     for (let m = re.exec(t2); m; m = re.exec(t2)) {
         const s0 = m.index;

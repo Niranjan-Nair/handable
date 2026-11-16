@@ -123,8 +123,7 @@ function placeLine(writer, placer, cmap, L, li, { pg, maxW }) {
     const lineKey = L.words.length ? L.words[0].key : 'empty' + L.psi;
     rng.reseed('L' + lineKey);
     // every line starts a little differently, slopes a little and drifts as it goes
-    const x0 =
-        left + (L.indent || 0) + (L.display ? Math.max(0, (maxW - lineW) / 2) : Math.abs(rng.normal()) * 0.05 * r);
+    const x0 = lineStart(L, left, lineW, maxW, rng, r);
     const slope = L.display ? 0 : rng.normal() * 0.008 * r;
     let drift = rng.normal() * 0.02 * r;
     const lineIndex =
@@ -206,6 +205,17 @@ function placeLine(writer, placer, cmap, L, li, { pg, maxW }) {
 }
 
 // a list item's marker, in the space the item hangs from, and the space after it
+// where a line starts (left: the left margin): after its indent, a little further in
+// by hand, or where its alignment puts it in the room after the indent
+function lineStart(L, left, lineW, maxW, rng, r) {
+    const indent = L.indent || 0;
+    const room = Math.max(0, maxW - indent - lineW);
+    if (L.display || L.align === 'center') return left + indent + room / 2;
+    if (L.align === 'right') return left + indent + room;
+
+    return left + indent + Math.abs(rng.normal()) * 0.05 * r;
+}
+
 function placeMarker(writer, placer, L, x0, slope, caretSpot) {
     const B = L.bullet;
     const bx = x0 - L.hang + 0.04;

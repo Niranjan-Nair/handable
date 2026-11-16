@@ -235,7 +235,7 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
   emptied by Backspace is removed with its last letter, in one undo step.
 - **The toolbar** (above the pages, like the one in Google Docs): undo and redo, the text size,
   underline, strikethrough, superscript, subscript, box, highlighter (with a color menu and
-  None), Equation, and Text box.
+  None), lists, alignment, Equation, and Text box.
   - **Size:** with text selected, the size of just that text: it's written larger or smaller on
     the same baseline (as `<size 48>…</size>`), and a line with larger text moves down to make
     room. With the caret in sized text, it's that text's size. Otherwise it's the size of the
@@ -251,8 +251,13 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
     anything else, wherever it goes), or takes the equation the caret is in out of it.
   - **How it works:** the text is read as a list of characters, each with the formats it's inside.
     Only the changed part of the text is rewritten, with as few tags as possible, as one undo step.
-  - **Shortcuts:** ⌘U underline, ⌘. superscript, ⌘, subscript, ⌘⇧X strikethrough, ⌘⇧H highlight
-    (Ctrl on Windows and Linux).
+  - **Alignment:** left, center or right, as in Google Docs: it applies to every paragraph the
+    selection touches (or the caret's), and a new paragraph started with Enter keeps it. It's
+    written as `<align center>…</align>` or `<align right>…</align>` around a paragraph's text.
+    Lines are centered or pushed right within the room they have (after an indent, within a
+    text box's width); without paper, the page takes the full width to align in.
+  - **Shortcuts:** ⌘U underline, ⌘. superscript, ⌘, subscript, ⌘⇧X strikethrough, ⌘⇧H highlight,
+    ⌘⇧L, ⌘⇧E and ⌘⇧R align left, center and right (Ctrl on Windows and Linux).
 - **Equations:** an equation is written out as math until the caret goes inside it, by a click
   or the arrow keys. Then its TeX is written instead, in a dashed box, until you leave it again.
   Deleting one of an equation's `$` signs deletes the whole equation, both signs included, as
