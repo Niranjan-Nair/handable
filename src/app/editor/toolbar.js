@@ -209,7 +209,6 @@ export function createToolbar(ed) {
     // the text being edited (the main text, or a text box)
     const sizeIn = $('.fmt-bar .size-n');
     const sizeMenu = $('.size-menu');
-    const closeSizes = popup(sizeMenu, $('.fmt-bar .size-more'), '.size-group', () => drawSizeMenu());
     let sizing = false; // a size being set
 
     // Sets size v. The text goes back to the page first: leaving the size field fires
@@ -248,21 +247,40 @@ export function createToolbar(ed) {
         b.addEventListener('click', () => useSize((+sizeIn.value || ed.baseSize()) + +b.dataset.sizeStep)),
     );
 
+    // as in Google Docs, the field opens a list of sizes under it (and can still be typed in)
     sizeMenu.innerHTML = SIZES.map((v) => `<button type="button" data-size="${v}">${v}</button>`).join('');
 
-    $$('.size-menu button').forEach((b) => {
-        keepCaret(b);
+    function openSizes() {
+        const cur = sizeIn.value;
+        $$('.size-menu button').forEach((b) => b.classList.toggle('on', b.dataset.size === cur));
+        sizeMenu.hidden = false;
+        sizeMenu.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+    }
 
-        b.addEventListener('click', () => {
-            closeSizes();
-            useSize(+b.dataset.size);
-        });
+    // a click into it selects the size, to type over (the click's own mouseup would
+    // put a caret in instead)
+    let selecting = false;
+
+    sizeIn.addEventListener('focus', () => {
+        sizeIn.select();
+        selecting = true;
+        openSizes();
     });
 
-    function drawSizeMenu() {
-        const cur = String(ed.size());
-        $$('.size-menu button').forEach((b) => b.classList.toggle('on', b.dataset.size === cur));
-    }
+    sizeIn.addEventListener('mouseup', (e) => {
+        if (selecting) e.preventDefault();
+        selecting = false;
+    });
+
+    sizeIn.addEventListener('blur', () => {
+        sizeMenu.hidden = true;
+    });
+
+    // (picking one keeps the focus in the field until the size is set)
+    $$('.size-menu button').forEach((b) => {
+        keepCaret(b);
+        b.addEventListener('click', () => useSize(+b.dataset.size));
+    });
 
     // the buttons show what's on where the caret is
     function draw() {

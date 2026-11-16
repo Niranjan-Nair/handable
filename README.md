@@ -239,8 +239,8 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
   - **Size:** with text selected, the size of just that text: it's written larger or smaller on
     the same baseline (as `<size 48>…</size>`), and a line with larger text moves down to make
     room. With the caret in sized text, it's that text's size. Otherwise it's the size of the
-    whole text being edited, the main text or a text box. − and + step it by 1; type a size, or
-    pick one from the menu next to it.
+    whole text being edited, the main text or a text box. − and + step it by 1. Clicking the size
+    opens a list of sizes under it, as in Google Docs, or type one.
   - **Shows the formats in use:** a button is on when every letter of the selection has that
     format, or, with no selection, when the caret is inside it.
   - **Toggles:** pressing a button that's on takes the format off the selection, even part of a
