@@ -1,7 +1,8 @@
 // The editor's toolbar: format buttons (showing the formats of the selection, or of
-// the caret), the highlighter's colors, and lists: the button turns the selected
-// paragraphs into list items (or back), its menu picks the kind (a bullet, your
-// own marker, or numbers and how they're written) and where the numbering starts.
+// the caret), the highlighter's colors, lists (the button turns the selected
+// paragraphs into list items, or back; its menu picks the kind: a bullet, your own
+// marker, or numbers and how they're written, and where the numbering starts), and
+// the size of the text being edited.
 import * as HW from '../../engine/index.js';
 import { $, $$ } from '../dom.js';
 import { listSettings, saveSettings } from '../store.js';
@@ -11,12 +12,12 @@ import { allListed, leadOf, setList, setStart } from './leads.js';
 const FORMS = { '.': ['', '.'], ')': ['', ')'], '()': ['(', ')'] };
 const BULLETS = ['•', '-', '+', '>'];
 
-// ed: the editor ({ ta, text, apply, changed, formats, toggleFormat })
+// ed: the region being edited ({ ta, text, apply, changed, formats, toggleFormat, size,
+// setSize }, see page.js)
 export function createToolbar(ed) {
-    const { ta } = ed;
     let lastHl = 'yellow'; // the highlighter color last used
-    const focus = () => ta.focus({ preventScroll: true });
-    const sel = () => [ta.selectionStart, ta.selectionEnd];
+    const focus = () => ed.ta.focus({ preventScroll: true });
+    const sel = () => [ed.ta.selectionStart, ed.ta.selectionEnd];
     // clicking a toolbar button keeps the selection
     const keepCaret = (el) => el.addEventListener('mousedown', (e) => e.preventDefault());
     $$('.fmt-bar button').forEach(keepCaret);
@@ -89,7 +90,7 @@ export function createToolbar(ed) {
     const startIn = $('.lm-start-n');
 
     function drawListMenu() {
-        const L = leadOf(ed.text(), ta.selectionStart);
+        const L = leadOf(ed.text(), ed.ta.selectionStart);
         const ls = listSettings();
         const ul = L.bullet && L.bullet.ul;
         const ol = L.bullet && L.bullet.ol;
@@ -139,7 +140,7 @@ export function createToolbar(ed) {
     // numbers: the kind and how it's written are picked separately, so the menu stays open
     const useNumbers = (change) => {
         const ls = listSettings();
-        const L = leadOf(ed.text(), ta.selectionStart);
+        const L = leadOf(ed.text(), ed.ta.selectionStart);
         const cur = (L.bullet && L.bullet.ol) || ls.ol;
         const ol = { pre: cur.pre, kind: cur.kind, post: cur.post, ...change };
         ls.ol = ol;
@@ -202,9 +203,32 @@ export function createToolbar(ed) {
         drawListMenu();
     });
 
+    // ---- the size of the text being edited (the main text, or a text box)
+    const sizeIn = $('.fmt-bar .size-n');
+
+    const useSize = (v) => {
+        if (Number.isFinite(v) && v > 0) ed.setSize(v);
+        sizeIn.value = ed.size();
+    };
+
+    sizeIn.addEventListener('change', () => useSize(+sizeIn.value));
+
+    sizeIn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === 'Escape') {
+            e.preventDefault();
+            if (e.key === 'Enter') useSize(+sizeIn.value);
+            focus();
+        }
+    });
+
+    $$('.fmt-bar [data-size-step]').forEach((b) =>
+        b.addEventListener('click', () => useSize(ed.size() + 2 * +b.dataset.sizeStep)),
+    );
+
     // the buttons show what's on where the caret is
     function draw() {
-        const focused = document.activeElement === ta;
+        if (document.activeElement !== sizeIn) sizeIn.value = ed.size();
+        const focused = document.activeElement === ed.ta;
         const f = focused ? ed.formats() : {};
 
         $$('.fmt-bar [data-fmt]').forEach((btn) => {
@@ -217,7 +241,7 @@ export function createToolbar(ed) {
         if (hl) hl.style.setProperty('--hl', HW.HIGHLIGHTS[(f.mark && f.color) || lastHl]);
         $$('.hl-menu [data-color]').forEach((b) => b.classList.toggle('on', !!f.mark && f.color === b.dataset.color));
         const lm = $('.fmt-bar .list-main');
-        const on = focused && !!leadOf(ed.text(), ta.selectionStart).bullet;
+        const on = focused && !!leadOf(ed.text(), ed.ta.selectionStart).bullet;
         lm.classList.toggle('on', on);
         lm.setAttribute('aria-pressed', on ? 'true' : 'false');
         if (!listMenu.hidden) drawListMenu();

@@ -81,7 +81,7 @@ The code is plain ES modules with no build step:
 | --- | --- |
 | `index.html`, `style.css` | the app's page |
 | `src/app/` | the app: `main.js` (tabs), `store.js` (data, settings, model), `pad.js` (writing pads), `train/`, `library.js`, `generate/` (settings and preview), `editor/` (writing on the page), `pdf.js` |
-| `src/app/editor/` | `editor.js` and `toolbar.js` handle the page and its keys; `leads.js` (indents, lists), `formats.js`, `markup.js` (tags, equations, caret steps) and `caret.js` are pure functions of the text, and are unit tested |
+| `src/app/editor/` | `page.js` puts the main text and the text boxes together; `editor.js` (one per text) and `toolbar.js` handle the keys and buttons; `leads.js` (indents, lists), `formats.js`, `markup.js` (tags, equations, caret steps) and `caret.js` are pure functions of the text, and are unit tested |
 | `src/engine/` | the handwriting engine, used by the app and the CLI; `index.js` is its public API |
 | `src/engine/model/` | learning a model from samples: `build.js`, `samples.js` (variants), `style.js`, `sequences.js` (joins and ligatures), `parts.js` (inferring characters), `marks.js`, `basefont.js` |
 | `src/engine/glyph/` | writing one glyph: `synth.js` (morphing samples), `compose.js` (accented and other letters made of parts), `finish.js` (smoothing, natural variation, pen), `fonts.js` (TeX font styles) |
@@ -212,7 +212,7 @@ This works like finetuning a pretrained model:
 
 ## Writing on the page
 
-There's no separate text box: the page in the preview is where you type.
+The page in the preview is where you type. Text boxes put more text anywhere on the page.
 
 - **How it works:** the text lives in a hidden text field that follows the caret, so typing,
   paste, undo, accents and IME input behave as in any text field. Each change is written out
@@ -233,9 +233,11 @@ There's no separate text box: the page in the preview is where you type.
   and highlighter appear as they'll be written. The arrow keys and Backspace step over the tags.
   At the end of a format, the first → steps out of it, so what you type next is plain. A format
   emptied by Backspace is removed with its last letter, in one undo step.
-- **The toolbar** (above the pages, like the one in Google Docs): undo and redo, underline,
-  strikethrough, superscript, subscript, box, highlighter (with a color menu and None), and
-  Equation.
+- **The toolbar** (above the pages, like the one in Google Docs): undo and redo, the text size,
+  underline, strikethrough, superscript, subscript, box, highlighter (with a color menu and
+  None), Equation, and Text box.
+  - **Size:** the size of the text being edited, the main text or a text box (− and + step it
+    by 2). The main text's size is also the Size slider under Layout and paper.
   - **Shows the formats in use:** a button is on when every letter of the selection has that
     format, or, with no selection, when the caret is inside it.
   - **Toggles:** pressing a button that's on takes the format off the selection, even part of a
@@ -258,6 +260,18 @@ There's no separate text box: the page in the preview is where you type.
   text turns into math (or stops being math).
 - **Mouse:** click to place the caret, drag to select, shift-click to extend, double-click a word.
   Up and down move by written lines, and Home and End go to either end of one.
+- **Text boxes:** press **Text box**, then click on the page where it goes. A box is more text,
+  written at its own size and wrapped at its own width, with everything the main text has
+  (formats, lists, equations).
+  - **Editing:** a click inside a box edits it, with its own caret and undo; a click elsewhere
+    goes back to the main text. A box left empty is removed.
+  - **Moving and sizing:** the box being edited has a bar along its top to drag it by, a handle on
+    its right to change its width, and × to delete it. Its size is the toolbar's size control.
+  - **On the page:** a box is on the page it was put on, with that page's paper and scan. Without
+    paper, the page grows to take it in. Each box has its own seed, so the same word in a box
+    and in the main text is written differently, as it would be.
+  - **How it works:** each box is written on its own (`layout/text-boxes.js`), and its glyphs
+    and caret map are moved to where it goes. Boxes are saved with the settings.
 
 ## Formatting & math
 

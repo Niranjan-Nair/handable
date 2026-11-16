@@ -1,5 +1,6 @@
 // What the editor draws over the written page: the caret, the selection, the box
-// around an equation being edited, and a pale hint on an empty page.
+// around an equation being edited, the frames of the text boxes, and a pale hint on
+// an empty page.
 import * as HW from '../../engine/index.js';
 import { $, $$ } from '../dom.js';
 import { data, getModel, settings } from '../store.js';
@@ -44,6 +45,7 @@ function hint(size) {
             size,
             maxWidth: 1e5,
             rawAt: null,
+            boxes: null,
         });
 
         const L = res.caretMap && res.caretMap.lines[0];
@@ -110,8 +112,16 @@ function extentsByLine(M, a, b) {
     return byLine.values();
 }
 
-// ta: the editor's text field; raw: the equation being edited, or null
-export function drawOverlay(res, ta, raw) {
+// The text boxes' frames (in page px, padded), as page.js finds them under the pointer.
+export function boxFrame(res, b) {
+    const pad = 0.15 * (res.caretMap.boxes[b.id] || res.caretMap).size;
+
+    return { page: b.page, x0: b.x - pad, y0: b.y - pad, x1: b.x + b.w + pad, y1: b.y + b.h + pad / 2 };
+}
+
+// mainTa: the main text's field; ed: the editor of the region being edited ({ ta, map,
+// raw }, see editor.js); boxId: its text box's id, or null for the main text
+export function drawOverlay(res, mainTa, ed, boxId) {
     const M = res && res.caretMap;
 
     if (!M) {
@@ -121,20 +131,39 @@ export function drawOverlay(res, ta, raw) {
     }
 
     const box = makeLayers(res);
-    const asc = (sc) => (M.asc + 0.08) * M.size * sc;
-    const desc = (sc) => 0.26 * M.size * sc;
-    const focused = document.activeElement === ta;
+    const focused = document.activeElement === ed.ta;
 
     // nothing written yet: a pale hint in your own handwriting, sitting on the first line
     // exactly where the first letter will go
-    if (!ta.value && M.lines[0] && !focused) {
+    if (!mainTa.value && M.lines[0] && document.activeElement !== mainTa) {
         const L0 = M.lines[0];
         const h = hint(M.size);
         const el = h && box(L0.page, 'ed-hint', L0.x - h.x, L0.y - h.y, L0.x - h.x + h.w, L0.y - h.y + h.h);
         if (el) el.innerHTML = h.svg;
     }
 
-    if (!focused) return;
+    for (const b of res.boxes) {
+        const f = boxFrame(res, b);
+        const on = b.id === boxId && focused;
+        const el = box(f.page, on ? 'ed-box on' : 'ed-box', f.x0, f.y0, f.x1, f.y1);
+        if (el && on) el.innerHTML = BOX_GRIPS;
+    }
+
+    if (focused) drawCaret(res, box, ed.map(), ed.ta, ed.raw());
+}
+
+// on the text box being edited: a handle to move it, one to change its width, and a delete button
+const BOX_GRIPS =
+    '<span class="ed-box-move" title="Drag to move the text box"></span>' +
+    '<span class="ed-box-size" title="Drag to change the width"></span>' +
+    '<button type="button" class="ed-box-del" title="Delete the text box" aria-label="Delete the text box">×</button>';
+
+// the caret, the selection and an equation being edited, from caret map M
+function drawCaret(res, box, M, ta, raw) {
+    if (!M) return;
+
+    const asc = (sc) => (M.asc + 0.08) * M.size * sc;
+    const desc = (sc) => 0.26 * M.size * sc;
 
     if (raw) {
         const pad = 0.08 * M.size;

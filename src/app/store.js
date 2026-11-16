@@ -64,6 +64,8 @@ export const settings = load(SETTINGS_KEY, {});
 settings.threshold = settings.threshold || HW.DEFAULTS.variantThreshold;
 settings.charset = settings.charset || 'lower';
 settings.gen = Object.assign({}, GEN_DEFAULTS, settings.gen || {});
+// text boxes on the page besides the main text: [{ id, text, x, y, w (px), size, page }]
+settings.gen.boxes = settings.gen.boxes || [];
 // the old default line spacing (1.9) looked double-spaced
 if (settings.gen.lineHeight === 1.9) settings.gen.lineHeight = GEN_DEFAULTS.lineHeight;
 

@@ -923,6 +923,16 @@ label.inline {
     background: var(--desk);
     border-radius: 20px;
     padding-top: 12px;
+    container-type: inline-size;
+}
+/* a narrower page: New variation is its icon alone, so the toolbar stays one row */
+@container (max-width: 900px) {
+    #g-reroll span {
+        display: none;
+    }
+    #g-reroll {
+        padding: 0 5px;
+    }
 }
 
 /* the formatting toolbar: a white bar floating above the page */
@@ -986,6 +996,35 @@ label.inline {
     color: var(--soft);
     padding: 0 8px 0 6px;
     cursor: pointer;
+}
+/* the size of the text being edited: − 48 + */
+.size-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+}
+.size-group .tb {
+    min-width: 26px;
+    padding: 0 3px;
+}
+.size-group .tb svg {
+    width: 16px;
+    height: 16px;
+}
+.fmt-bar .size-n {
+    width: 46px;
+    height: 28px;
+    padding: 0 4px;
+    font-size: 13.5px;
+    text-align: center;
+    border-radius: 7px;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+.fmt-bar .size-n::-webkit-inner-spin-button,
+.fmt-bar .size-n::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 .hl-group {
     position: relative;
@@ -1311,6 +1350,73 @@ label.inline {
     display: block;
     width: 100%;
     height: 100%;
+}
+/* text boxes: a faint frame on hover, and on the one being edited a frame with
+   handles to move it and change its width, and a delete button */
+.ed-box {
+    position: absolute;
+    border: 1px dashed transparent;
+    border-radius: 4px;
+}
+.page-editor:hover .ed-box {
+    border-color: rgba(46, 68, 196, 0.28);
+}
+.ed-box.on,
+.page-editor:hover .ed-box.on {
+    border: 1.5px solid rgba(46, 68, 196, 0.55);
+}
+.ed-box-move,
+.ed-box-size,
+.ed-box-del {
+    position: absolute;
+    pointer-events: auto;
+}
+.ed-box-move {
+    left: -1.5px;
+    right: -1.5px;
+    top: -11px;
+    height: 10px;
+    border-radius: 4px 4px 0 0;
+    background: rgba(46, 68, 196, 0.55);
+    cursor: move;
+}
+.ed-box-size {
+    top: 50%;
+    right: -6px;
+    width: 10px;
+    height: 22px;
+    margin-top: -11px;
+    border-radius: 4px;
+    background: var(--surface);
+    border: 1.5px solid rgba(46, 68, 196, 0.7);
+    cursor: ew-resize;
+}
+.ed-box-del {
+    top: -12px;
+    right: -12px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--soft);
+    font-size: 15px;
+    line-height: 20px;
+    box-shadow:
+        0 0 0 1px var(--line-strong),
+        0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.ed-box-del:hover {
+    color: var(--danger);
+}
+/* after the Text box button, a click on the page places it */
+.page-editor.placing .sheet {
+    cursor: crosshair;
+}
+.page-editor.dragging,
+.page-editor.dragging .sheet {
+    cursor: move;
+    user-select: none;
 }
 
 details.help {

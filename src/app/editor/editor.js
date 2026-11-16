@@ -1,32 +1,27 @@
-// Writing on the page. The page in the preview is the editor: the text lives in a
-// hidden field (#g-text) that follows the caret, so typing, pasting, undo, IME input
-// and screen readers all work as in any text field. Every time the text changes it's
-// written out again, and the engine reports where each character went (the caret
-// map); from that the caret, the selection and the box around an equation being
-// edited are drawn over the sheet.
+// Editing one text on the page: the main text, or a text box (page.js puts them
+// together). The text lives in a hidden field that follows the caret, so typing,
+// pasting, undo, IME input and screen readers all work as in any text field. Every
+// time the text changes it's written out again, and the engine reports where each
+// character went (the caret map); from that the caret, the selection and the box
+// around an equation being edited are drawn over the sheet.
 //  - markup (<sup>, <u>, <mark> …) is never shown: the arrow keys and Backspace step
 //    over it, and the toolbar shows which formats the caret is inside
 //  - an equation is shown written out until the caret goes inside it (a click, or the
 //    arrow keys); then its TeX is written instead, in a dashed box
-import { $, $$ } from '../dom.js';
 import { listSettings, saveSettings, settings } from '../store.js';
-import { caretAt, charsOn, lineStep, posAt } from './caret.js';
+import { caretAt, charsOn, lineStep } from './caret.js';
 import { activeFormats, toggleFormat } from './formats.js';
 import { leadKey, leadOf, listAutoformat } from './leads.js';
 import { deleteAt, mathAround, stepLeft, stepRight, widenOverMath } from './markup.js';
-import { drawOverlay } from './overlay.js';
-import { createToolbar } from './toolbar.js';
 
-// getResult(): the result of generate() on show; regenerate(): write the page again
-export function createEditor({ getResult, regenerate }) {
-    const ta = $('#g-text');
-    const wrap = ta.closest('.page-editor');
+// ta: its hidden field; map(): its caret map (or null); redraw(): draw the caret and
+// toolbar again; regenerate(): write the page again; toolbar(): the toolbar
+export function createEditor({ ta, map, redraw, regenerate, toolbar }) {
     let raw = null; // the equation being edited: { a, b, … } (its source range, with delimiters)
     let goalX = null; // the x the caret keeps to going up and down
     let anchor = null; // where a mouse selection started
 
     const text = () => ta.value;
-    const map = () => (getResult() && getResult().caretMap) || null;
     const focusPos = () => (ta.selectionDirection === 'backward' ? ta.selectionStart : ta.selectionEnd);
     const anchorPos = () => (ta.selectionDirection === 'backward' ? ta.selectionEnd : ta.selectionStart);
 
@@ -79,17 +74,11 @@ export function createEditor({ getResult, regenerate }) {
             return;
         }
 
-        draw();
+        redraw();
     }
 
-    function draw() {
-        toolbar.draw();
-        drawOverlay(getResult(), ta, raw);
-    }
-
-    const ed = { ta, text, apply, changed, formats: () => activeFormats(text(), ta.selectionStart, ta.selectionEnd) };
-    ed.toggleFormat = (k, color, off) => apply(toggleFormat(text(), ta.selectionStart, ta.selectionEnd, k, color, off));
-    const toolbar = createToolbar(ed);
+    const formats = () => activeFormats(text(), ta.selectionStart, ta.selectionEnd);
+    const format = (k, color, off) => apply(toggleFormat(text(), ta.selectionStart, ta.selectionEnd, k, color, off));
 
     function moveTo(k, extend) {
         k = Math.max(0, Math.min(text().length, k));
@@ -153,7 +142,7 @@ export function createEditor({ getResult, regenerate }) {
 
         // ⌘⇧8 bullets, ⌘⇧7 numbers
         if (e.shiftKey && (e.code === 'Digit8' || e.code === 'Digit7')) {
-            toolbar.toggleList(e.code === 'Digit8' ? 'ul' : 'ol');
+            toolbar().toggleList(e.code === 'Digit8' ? 'ul' : 'ol');
 
             return true;
         }
@@ -169,7 +158,7 @@ export function createEditor({ getResult, regenerate }) {
         const k = (e.shiftKey ? SHIFT_FORMAT_KEYS : FORMAT_KEYS)[e.key.toLowerCase()];
         if (!k) return false;
 
-        ed.toggleFormat(k, k === 'mark' ? ed.formats().color || toolbar.lastHighlight() : undefined);
+        format(k, k === 'mark' ? formats().color || toolbar().lastHighlight() : undefined);
 
         return true;
     }
@@ -259,47 +248,15 @@ export function createEditor({ getResult, regenerate }) {
         if (document.activeElement === ta) changed();
     });
 
-    ta.addEventListener('focus', () => wrap.classList.add('editing'));
-
     ta.addEventListener('blur', () => {
-        wrap.classList.remove('editing');
         if (raw) {
             raw = null;
             regenerate();
-        } else draw();
+        } else redraw();
     });
 
-    // ---- the mouse
-    // the caret position under the pointer (enterMath: a click inside an equation goes into it)
-    function pointerPos(e, enterMath) {
-        const sh = e.target.closest && e.target.closest('#g-preview .sheet');
-        const M = map();
-        if (!sh || !M) return text().length;
-
-        const page = $$('#g-preview .sheet').indexOf(sh);
-        const r = sh.getBoundingClientRect();
-        const { width: W, height: H } = getResult();
-        let x = ((e.clientX - r.left) / r.width) * W;
-        let y = ((e.clientY - r.top) / r.height) * H;
-        // undo the scan's tilt
-        const sk = ((M.skews[page] || 0) * Math.PI) / 180;
-
-        if (sk) {
-            const dx = x - W / 2;
-            const dy = y - H / 2;
-            x = W / 2 + dx * Math.cos(sk) + dy * Math.sin(sk);
-            y = H / 2 - dx * Math.sin(sk) + dy * Math.cos(sk);
-        }
-
-        return posAt(M, text(), page, x, y, enterMath);
-    }
-
-    $('#g-preview').addEventListener('mousedown', (e) => {
-        if (e.button !== 0 || !map()) return;
-
-        e.preventDefault();
-        ta.focus({ preventScroll: true });
-        const k = pointerPos(e, e.detail < 2 && !e.shiftKey);
+    // ---- the mouse (page.js finds the caret position k under the pointer)
+    function pointerDown(k, e) {
         goalX = null;
 
         if (e.detail === 2) {
@@ -318,27 +275,36 @@ export function createEditor({ getResult, regenerate }) {
             moveTo(k);
             anchor = k;
         }
-    });
+    }
 
-    window.addEventListener('mousemove', (e) => {
-        if (anchor == null || !(e.buttons & 1)) return;
+    function pointerDrag(k) {
+        if (anchor == null) return;
 
-        const k = pointerPos(e, false);
         ta.setSelectionRange(Math.min(anchor, k), Math.max(anchor, k), k < anchor ? 'backward' : 'forward');
-        draw();
-    });
+        redraw();
+    }
 
-    window.addEventListener('mouseup', () => {
+    function pointerUp() {
         if (anchor == null) return;
 
         anchor = null;
         changed();
-    });
+    }
 
     return {
-        draw,
+        ta,
+        map,
+        text,
+        apply,
         changed,
-        // where the equation being edited is, for generate(): its TeX is written instead
+        formats,
+        toggleFormat: format,
+        pointerDown,
+        pointerDrag,
+        pointerUp,
+        // the equation being edited, for the overlay
+        raw: () => raw,
+        // where it is, for generate(): its TeX is written instead
         rawAt: () => (raw ? raw.a + 1 : -1),
     };
 }

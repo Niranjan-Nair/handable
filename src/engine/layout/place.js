@@ -9,6 +9,9 @@ import { markGlyph, ruleStroke } from './boxes.js';
 import { tabUnits } from './lines.js';
 import { isBackPage } from './pages.js';
 
+// a page before anything is put on it
+export const emptyPage = () => ({ placed: [], inkEnds: [], hls: [], hlLines: [] });
+
 // Where the marks go. Each placed glyph: { char, strokes (px), opacity, key (for the
 // renderer's own randomness), glyph, ox, oy, ps (its origin and scale, px), line }.
 function createPlacer(writer, nPages) {
@@ -19,7 +22,7 @@ function createPlacer(writer, nPages) {
     const endA = 0.05 + 0.4 * (1 - pc);
 
     const placer = {
-        pages: Array.from({ length: nPages }, () => ({ placed: [], inkEnds: [], hls: [], hlLines: [] })),
+        pages: Array.from({ length: nPages }, emptyPage),
         ink: { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }, // drawn extent, px
         usedW: 0, // units
         page: null,

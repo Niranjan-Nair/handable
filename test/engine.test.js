@@ -49,6 +49,34 @@ test('accented letters are your own letters with the accent added, however they 
     assert.deepEqual(HW.generate(model, 'Øl, Łódź, straße, ¡olé!', { seed: 1 }).missing, []);
 });
 
+test('text boxes are written at their own size and width, where they were put', () => {
+    const box = {
+        id: 'n',
+        text: 'a note in a box, long enough to wrap onto more lines',
+        x: 900,
+        y: 600,
+        w: 300,
+        size: 30,
+        page: 1,
+    };
+    const res = HW.generate(model, 'main text\fpage two', { seed: 1, paper: 'plain', boxes: [box] });
+    const [b] = res.boxes;
+    const M = res.caretMap.boxes.n;
+    assert.equal(b.page, 1);
+    assert.ok(M.chars.length > 10 && M.chars.every((c) => c.page === 1), 'its caret places, on its page');
+    assert.ok(
+        M.chars.every((c) => c.x0 >= 900 - 1 && c.x1 <= 900 + 300 + 1),
+        'within its width',
+    );
+    assert.ok(M.lines.length >= 2, 'wrapped');
+    assert.equal(M.size, 30);
+
+    const free = HW.generate(model, 'hi', { seed: 1, boxes: [{ ...box, page: 0 }] });
+    assert.ok(free.width >= 1200 && free.height >= 600, 'without paper the page takes in the box');
+    const without = HW.generate(model, 'main text\fpage two', { seed: 1, paper: 'plain' });
+    assert.deepEqual(res.caretMap.chars, without.caretMap.chars, 'the main text is unchanged');
+});
+
 test('Cyrillic is written too', () => {
     assert.deepEqual(HW.generate(model, 'Съешь же ещё этих мягких булок', { seed: 1 }).missing, []);
 });

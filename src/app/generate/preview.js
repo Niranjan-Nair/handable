@@ -1,8 +1,8 @@
-// The generate tab's page: the text written out (the page is also the editor, see
-// editor/editor.js), and saving it as SVG or PDF.
+// The generate tab's page: the text and its text boxes written out (the page is also
+// the editor, see editor/page.js), and saving it as SVG or PDF.
 import * as HW from '../../engine/index.js';
 import { $, download, status } from '../dom.js';
-import { createEditor } from '../editor/editor.js';
+import { createPage } from '../editor/page.js';
 import { svgPagesToPDF } from '../pdf.js';
 import { data, getModel, saveSettings, settings, ui } from '../store.js';
 
@@ -10,7 +10,7 @@ let lastRes = null; // the last result of HW.generate, as shown
 let lastGenMs = 0; // how long writing it took
 let genTimer = null;
 
-const editor = createEditor({ getResult: () => lastRes, regenerate: () => runGen() });
+const page = createPage({ getResult: () => lastRes, regenerate: () => runGen(), textChanged });
 
 // the options for HW.generate, from the settings
 const genOptions = (extra) => {
@@ -52,11 +52,15 @@ export function runGen() {
     const t0 = performance.now();
     // on paper, the page comes as layers (see showLayers); the whole pages, for
     // downloads, are written when one is asked for (fullRes)
-    const res = HW.generate(getModel(), settings.gen.text, genOptions({ rawAt: editor.rawAt(), layers: true }));
+    const res = HW.generate(
+        getModel(),
+        settings.gen.text,
+        genOptions({ rawAt: page.rawAt(), boxes: page.boxOptions(), layers: true }),
+    );
     lastGenMs = performance.now() - t0;
     lastRes = res;
     showSheets(pv, res);
-    editor.draw();
+    page.draw();
     $('#g-pages').textContent = res.page ? `${res.nPages} page${res.nPages > 1 ? 's' : ''}` : '';
 
     $('#g-missing').textContent = res.missing.length

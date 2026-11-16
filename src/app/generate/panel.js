@@ -75,8 +75,8 @@ $$('.chooser[data-for] [data-val]').forEach((b) =>
 $$('.swatches [data-color]').forEach((b) => b.addEventListener('click', () => setGen('color', b.dataset.color)));
 
 $('#g-reset').onclick = () => {
-    const text = settings.gen.text;
-    settings.gen = Object.assign({}, GEN_DEFAULTS, { text });
+    const { text, boxes } = settings.gen;
+    settings.gen = Object.assign({}, GEN_DEFAULTS, { text, boxes });
 
     for (const k of GEN_KEYS) {
         const el = $('#g-' + k);
