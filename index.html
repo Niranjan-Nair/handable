@@ -466,6 +466,17 @@
                                     <input class="size-n" type="number" min="12" max="160" aria-label="Text size" />
                                     <button
                                         type="button"
+                                        class="tb size-more"
+                                        title="Pick a size"
+                                        aria-label="Pick a size"
+                                        aria-haspopup="true"
+                                        aria-expanded="false"
+                                    >
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5z" /></svg>
+                                    </button>
+                                    <div class="size-menu" role="menu" hidden></div>
+                                    <button
+                                        type="button"
                                         class="tb"
                                         data-size-step="1"
                                         title="Larger"

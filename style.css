@@ -1021,6 +1021,48 @@ label.inline {
     -moz-appearance: textfield;
     appearance: textfield;
 }
+.size-group {
+    position: relative;
+}
+.size-group .size-more {
+    min-width: 16px;
+    padding: 0;
+    margin-left: -2px;
+}
+.size-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 22px;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    width: 64px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 6px;
+    background: var(--surface);
+    border-radius: 12px;
+    box-shadow: var(--float);
+    scrollbar-width: thin;
+}
+.size-menu[hidden] {
+    display: none;
+}
+.size-menu button {
+    padding: 5px 8px;
+    border-radius: 7px;
+    background: transparent;
+    font-size: 13.5px;
+    text-align: left;
+    color: var(--text);
+}
+.size-menu button:hover {
+    background: var(--fill);
+}
+.size-menu button.on {
+    background: var(--ink-soft);
+    color: var(--ink);
+}
 .fmt-bar .size-n::-webkit-inner-spin-button,
 .fmt-bar .size-n::-webkit-outer-spin-button {
     -webkit-appearance: none;

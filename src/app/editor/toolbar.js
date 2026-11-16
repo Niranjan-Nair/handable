@@ -11,6 +11,8 @@ import { allListed, leadOf, setList, setStart } from './leads.js';
 // how a number is written: "1." "1)" "(1)"
 const FORMS = { '.': ['', '.'], ')': ['', ')'], '()': ['(', ')'] };
 const BULLETS = ['•', '-', '+', '>'];
+// the sizes in the size menu
+const SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 35, 40, 48, 56, 64, 72, 96, 120, 160];
 
 // ed: the region being edited ({ ta, text, apply, changed, formats, toggleFormat, size,
 // setSize }, see page.js)
@@ -206,25 +208,61 @@ export function createToolbar(ed) {
     // ---- the size of the selection (or the sized stretch the caret is in), or else of
     // the text being edited (the main text, or a text box)
     const sizeIn = $('.fmt-bar .size-n');
+    const sizeMenu = $('.size-menu');
+    const closeSizes = popup(sizeMenu, $('.fmt-bar .size-more'), '.size-group', () => drawSizeMenu());
+    let sizing = false; // a size being set
 
-    const useSize = (v) => {
-        if (Number.isFinite(v) && v > 0) ed.setSize(v);
+    // Sets size v. The text goes back to the page first: leaving the size field fires
+    // its change, which mustn't set the size again halfway through (it would be worked
+    // out on the text as it was, and written over the text as it is).
+    function useSize(v) {
+        if (sizing) return;
+
+        sizing = true;
+
+        try {
+            if (document.activeElement === sizeIn) focus();
+            if (Number.isFinite(v) && v > 0) ed.setSize(v);
+        } finally {
+            sizing = false;
+        }
+
         sizeIn.value = ed.size();
-    };
+    }
 
     sizeIn.addEventListener('change', () => useSize(+sizeIn.value));
 
     sizeIn.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === 'Escape') {
+        if (e.key === 'Enter') {
             e.preventDefault();
-            if (e.key === 'Enter') useSize(+sizeIn.value);
+            useSize(+sizeIn.value);
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            sizeIn.value = ed.size(); // (so leaving it changes nothing)
             focus();
         }
     });
 
     $$('.fmt-bar [data-size-step]').forEach((b) =>
-        b.addEventListener('click', () => useSize((+ed.size() || ed.baseSize()) + +b.dataset.sizeStep)),
+        // (from the size shown, which may have just been typed; blank: sizes differ)
+        b.addEventListener('click', () => useSize((+sizeIn.value || ed.baseSize()) + +b.dataset.sizeStep)),
     );
+
+    sizeMenu.innerHTML = SIZES.map((v) => `<button type="button" data-size="${v}">${v}</button>`).join('');
+
+    $$('.size-menu button').forEach((b) => {
+        keepCaret(b);
+
+        b.addEventListener('click', () => {
+            closeSizes();
+            useSize(+b.dataset.size);
+        });
+    });
+
+    function drawSizeMenu() {
+        const cur = String(ed.size());
+        $$('.size-menu button').forEach((b) => b.classList.toggle('on', b.dataset.size === cur));
+    }
 
     // the buttons show what's on where the caret is
     function draw() {
