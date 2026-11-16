@@ -1032,13 +1032,10 @@ label.inline {
     display: flex;
     flex-direction: column;
     width: 52px;
-    max-height: 300px;
-    overflow-y: auto;
     padding: 6px;
     background: var(--surface);
     border-radius: 12px;
     box-shadow: var(--float);
-    scrollbar-width: thin;
 }
 .size-menu[hidden] {
     display: none;

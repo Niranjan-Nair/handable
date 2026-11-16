@@ -12,7 +12,7 @@ import { allListed, leadOf, setList, setStart } from './leads.js';
 const FORMS = { '.': ['', '.'], ')': ['', ')'], '()': ['(', ')'] };
 const BULLETS = ['•', '-', '+', '>'];
 // the sizes in the size menu
-const SIZES = [12, 14, 16, 18, 20, 24, 28, 32, 35, 40, 48, 56, 64, 72, 96, 120, 160];
+const SIZES = [20, 24, 28, 35, 40, 48, 56, 72, 96];
 
 // ed: the region being edited ({ ta, text, apply, changed, formats, toggleFormat, size,
 // setSize }, see page.js)
@@ -254,7 +254,6 @@ export function createToolbar(ed) {
         const cur = sizeIn.value;
         $$('.size-menu button').forEach((b) => b.classList.toggle('on', b.dataset.size === cur));
         sizeMenu.hidden = false;
-        sizeMenu.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
     }
 
     // a click into it selects the size, to type over (the click's own mouseup would
