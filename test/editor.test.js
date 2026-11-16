@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { replaceChange } from '../src/app/editor/change.js';
-import { activeFormats, toggleFormat, toggleMath } from '../src/app/editor/formats.js';
+import { activeFormats, setSize, toggleFormat, toggleMath } from '../src/app/editor/formats.js';
 import { leadKey, leadOf, listAutoformat, setList } from '../src/app/editor/leads.js';
 import { deleteAt, stepLeft, stepRight, widenOverMath } from '../src/app/editor/markup.js';
 
@@ -74,6 +74,19 @@ test('formats: on and off for a selection, and at the caret', () => {
     assert.equal(applied(u, toggleFormat(u, a, b, 'u'))[0], t);
     const [caret, at] = applied('ab', toggleFormat('ab', 2, 2, 'sup'));
     assert.deepEqual([caret, at], ['ab<sup></sup>', 7]);
+});
+
+test("sizes: a selection, the stretch at the caret, and back to the text's own", () => {
+    const t = 'one two three';
+    const [t2, a, b] = applied(t, setSize(t, 4, 7, 60, 35));
+    assert.equal(t2, 'one <size 60>two</size> three');
+    assert.deepEqual([a, b], [13, 16], 'the selection stays on the text');
+    assert.equal(activeFormats(t2, a, b).size, 60);
+    assert.equal(activeFormats(t2, 0, t2.length).size, '', 'more than one size');
+    assert.equal(activeFormats(t2, 1, 1).size, null, "the text's own");
+    assert.equal(applied(t2, setSize(t2, 15, 15, 40, 35))[0], 'one <size 40>two</size> three', 'at the caret');
+    assert.equal(applied(t2, setSize(t2, a, b, 35, 35))[0], t, 'the base size needs no tag');
+    assert.equal(setSize(t, 1, 1, 50, 35), null, 'at a caret outside any: the whole text');
 });
 
 test('the equation button wraps, unwraps, and never pairs with another $', () => {

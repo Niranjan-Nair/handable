@@ -11,7 +11,7 @@ export function tagAt(t, k) {
     TAG.lastIndex = k;
     const m = TAG.exec(t);
 
-    return m ? { end: k + m[0].length, closing: !!m[1], name: m[2].toLowerCase(), color: m[3] } : null;
+    return m ? { end: k + m[0].length, closing: !!m[1], name: m[2].toLowerCase(), value: m[3] } : null;
 }
 
 // the start of the format tag ending at k, or -1

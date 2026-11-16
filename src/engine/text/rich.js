@@ -53,10 +53,12 @@ const SUB_MAP = {
 };
 
 // A format tag: <sup> <sub> <u> <s> (or <del>, <strike>) <box> <mark> (with a color:
-// <mark pink>, <mark color="pink">); groups: closing /, name, color
-export const FORMAT_TAG = /<(\/?)(sup|sub|u|s|del|strike|box|mark)(?:\s+(?:colou?r\s*=\s*)?["']?([a-z]+)["']?)?\s*>/i;
+// <mark pink>, <mark color="pink">) <size> (with a size in px: <size 24>); groups:
+// closing /, name, value (the color or size)
+export const FORMAT_TAG =
+    /<(\/?)(sup|sub|u|s|del|strike|box|mark|size)(?:\s+(?:colou?r\s*=\s*)?["']?([a-z]+|\d+(?:\.\d+)?)["']?)?\s*>/i;
 // any format tag, for stripping them out of a stretch of text
-export const ANY_FORMAT_TAG = /<\/?(?:sup|sub|u|s|del|strike|box|mark)\b[^<>]*>/gi;
+export const ANY_FORMAT_TAG = /<\/?(?:sup|sub|u|s|del|strike|box|mark|size)\b[^<>]*>/gi;
 
 const TAG_HERE = new RegExp('^' + FORMAT_TAG.source, 'i');
 
@@ -91,8 +93,9 @@ function smartQuote(src, i, q) {
 // Text -> paragraphs; each paragraph is a list of words, a word a list of nodes:
 //   { t: 'ch', ch, lv, ...deco }    character; lv = nested script levels ['sup'|'sub']
 //   { t: 'math', tree, lv, ...deco } inline TeX
-// deco: u (underline), st (strikethrough), box (id of the <box> it's in), hl (highlighter color)
-// Markup: <sup> <sub> <u> <s> <box> <mark pink|orange|yellow|green|blue>, Unicode ² ₂,
+// deco: u (underline), st (strikethrough), box (id of the <box> it's in), hl (highlighter color),
+// sz (its size in px, or null: the text's own)
+// Markup: <sup> <sub> <u> <s> <box> <mark pink|orange|yellow|green|blue> <size 24>, Unicode ² ₂,
 // $…$ inline math, $$…$$ display math (own centered line), \$ for a literal dollar sign.
 // Every node knows where it came from in the text (si … se), and so does every
 // paragraph, so an editor can put a caret on the page. Math is cut into pieces
@@ -139,6 +142,7 @@ class RichParser {
         this.boxes = [];
         this.boxSeq = 0;
         this.marks = [];
+        this.sizes = [];
         // the equation being edited (written as its TeX), and where it ends
         this.rawSpan = null;
         this.rawUntil = -1;
@@ -195,6 +199,7 @@ class RichParser {
             st: this.st > 0,
             box: boxes.length ? boxes[boxes.length - 1] : 0,
             hl: marks.length ? marks[marks.length - 1] : null,
+            sz: this.sizes.length ? this.sizes[this.sizes.length - 1] : null,
         };
     }
 
@@ -371,7 +376,11 @@ class RichParser {
         const step = closing ? -1 : 1;
         if (name === 'u') this.u = Math.max(0, this.u + step);
         else if (name === 's' || name === 'del' || name === 'strike') this.st = Math.max(0, this.st + step);
-        else if (name === 'box') {
+        else if (name === 'size') {
+            if (closing) this.sizes.pop();
+            else if (+m[3] > 0) this.sizes.push(+m[3]);
+            else return -1; // <size> needs a size
+        } else if (name === 'box') {
             if (closing) this.boxes.pop();
             else this.boxes.push(++this.boxSeq);
         } else if (name === 'mark') {

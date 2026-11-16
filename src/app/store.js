@@ -13,9 +13,9 @@ export const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toS
 export const GEN_DEFAULTS = {
     text: 'The quick brown fox jumps over the lazy dog.\nHow vexingly quick daft zebras jump!',
     randomness: 1,
-    size: 48,
+    size: 35,
     maxWidth: 800,
-    lineHeight: HW.DEFAULTS.lineHeight,
+    lineHeight: 2,
     pageSize: 'letter',
     letterSpacing: 1,
     wordSpacing: 1,

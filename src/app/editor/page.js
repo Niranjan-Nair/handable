@@ -7,6 +7,7 @@ import { $, $$, clamp, status } from '../dom.js';
 import { saveSettings, settings, uid } from '../store.js';
 import { posAt } from './caret.js';
 import { createEditor } from './editor.js';
+import { setSize as sizeChange } from './formats.js';
 import { boxFrame, drawOverlay } from './overlay.js';
 import { createToolbar } from './toolbar.js';
 
@@ -76,17 +77,37 @@ export function createPage({ getResult, regenerate, textChanged }) {
         changed: () => cur().changed(),
         formats: () => cur().formats(),
         toggleFormat: (...a) => cur().toggleFormat(...a),
-        size: () => (active === 'main' ? settings.gen.size : boxById(active).size),
+        baseSize,
+        size,
         setSize,
     };
 
     const toolbar = createToolbar(ed);
 
+    // the size of the text being edited
+    function baseSize() {
+        return active === 'main' ? settings.gen.size : boxById(active).size;
+    }
+
+    // the size shown: the selection's (or the sized stretch the caret is in), '' when
+    // the selection has more than one, or else the text's
+    function size() {
+        const v = cur().formats().size;
+
+        return v == null ? baseSize() : v;
+    }
+
+    // a size for the selection (or the sized stretch the caret is in), or else for the text
     function setSize(v) {
         v = clamp(Math.round(v), SIZE_MIN, SIZE_MAX);
+        const E = cur();
+        const { selectionStart: a, selectionEnd: b } = E.ta;
+        // (a field keeps its selection while the size box has the focus)
+        const span = sizeChange(E.text(), a, b, v, baseSize());
+        if (span) return E.apply(span);
 
         if (active === 'main') {
-            // through the panel's slider, which saves it and writes the page again
+            // through the panel's field, which saves it and writes the page again
             const el = $('#g-size');
             el.value = v;
             el.dispatchEvent(new Event('input'));

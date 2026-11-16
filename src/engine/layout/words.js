@@ -4,9 +4,10 @@ import { addBox, emptyBox, handStroke } from './boxes.js';
 import { mathList, SCRIPT } from './math.js';
 import { runBox } from './runs.js';
 
-// script levels (['sup', 'sub', …]) -> scale and baseline shift
-function levelOf(writer, lv) {
-    let s = 1;
+// a run's script levels (['sup', 'sub', …]) and size -> its scale and baseline shift
+// (a size scales letters about the baseline, so they stay on the line)
+function levelOf(writer, lv, sz) {
+    let s = sz ? sz / writer.o.size : 1;
     let dy = 0;
 
     for (const l of lv) {
@@ -23,8 +24,8 @@ function formatRuns(nodes) {
     const runs = [];
 
     for (const nd of nodes) {
-        const deco = { u: nd.u, st: nd.st, box: nd.box, hl: nd.hl };
-        const key = nd.lv.join(',') + '|' + nd.u + '|' + nd.st + '|' + nd.box + '|' + nd.hl;
+        const deco = { u: nd.u, st: nd.st, box: nd.box, hl: nd.hl, sz: nd.sz };
+        const key = [nd.lv.join(','), nd.u, nd.st, nd.box, nd.hl, nd.sz].join('|');
         const last = runs[runs.length - 1];
         if (nd.t === 'ch' && last && last.chars && last.key === key) {
             last.chars.push(nd.ch);
@@ -46,7 +47,7 @@ export function wordBox(writer, nodes) {
     let prevCh = null;
 
     runs.forEach((run, k) => {
-        const { s, dy } = levelOf(writer, run.lv);
+        const { s, dy } = levelOf(writer, run.lv, run.sz);
 
         const rb = run.math
             ? mathList(writer, run.math.tree, s, run.math.display)

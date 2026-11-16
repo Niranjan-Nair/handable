@@ -1,9 +1,9 @@
-// Formats (superscript, subscript, underline, strikethrough, box, highlighter) as
-// data. The text is read as a list of atoms (a character, an equation, an escaped \$),
-// each with the stack of formats it's inside (outermost first): { k: 'sup' | 'sub' |
-// 'u' | 's' | 'box' | 'mark', v } (v: the highlighter color, or which box). Turning a
-// format on or off changes the atoms' stacks, and the text is written back out with
-// as few tags as possible.
+// Formats (superscript, subscript, underline, strikethrough, box, highlighter, size)
+// as data. The text is read as a list of atoms (a character, an equation, an escaped
+// \$), each with the stack of formats it's inside (outermost first): { k: 'sup' |
+// 'sub' | 'u' | 's' | 'box' | 'mark' | 'size', v } (v: the highlighter color, which
+// box, or the size). Turning a format on or off changes the atoms' stacks, and the
+// text is written back out with as few tags as possible.
 import { replaceChange } from './change.js';
 import { leadOf } from './leads.js';
 import { cpAt, mathAround, mathRanges, mathTouching, tagAt } from './markup.js';
@@ -49,7 +49,14 @@ export function atomize(t, upto = -1) {
                 const j = stack.map((x) => x.k).lastIndexOf(k);
                 if (j >= 0) stack = stack.slice(0, j).concat(stack.slice(j + 1));
             } else {
-                const v = k === 'mark' ? (m.color || 'yellow').toLowerCase() : k === 'box' ? 'b' + ++boxSeq : '';
+                const v =
+                    k === 'mark'
+                        ? (m.value || 'yellow').toLowerCase()
+                        : k === 'box'
+                          ? 'b' + ++boxSeq
+                          : k === 'size'
+                            ? String(+m.value)
+                            : '';
                 stack = stack.concat({ k, v });
             }
 
@@ -69,7 +76,7 @@ export function atomize(t, upto = -1) {
 }
 
 const same = (x, y) => x.k === y.k && x.v === y.v;
-const openTag = (x) => (x.k === 'mark' ? `<mark ${x.v}>` : `<${x.k}>`);
+const openTag = (x) => (x.k === 'mark' || x.k === 'size' ? `<${x.k} ${x.v}>` : `<${x.k}>`);
 const closeTag = (x) => `</${x.k}>`;
 
 // the atoms written back out as text; each atom gets na … nb, where it is in it
@@ -104,7 +111,8 @@ export function serialize(atoms) {
 const hasFmt = (stack, k, color) => stack.some((x) => x.k === k && (k !== 'mark' || color == null || x.v === color));
 
 // The formats of the selection a … b (every letter in it has them), or of the caret:
-// { sup, sub, u, s, box, mark, color (the highlighter's), math (in an equation) }
+// { sup, sub, u, s, box, mark, color (the highlighter's), size (the size every letter
+// has: a number, null for the text's own, or '' when they differ), math (in an equation) }
 export function activeFormats(t, a, b) {
     const math = !!mathTouching(t, a, b);
     let stacks;
@@ -127,8 +135,63 @@ export function activeFormats(t, a, b) {
         box: all('box'),
         mark: all('mark'),
         color: marks[0] || null,
+        size: commonSize(stacks),
         math,
     };
+}
+
+// a stack's size (its innermost), or null
+function sizeOf(stack) {
+    const x = stack.findLast((f) => f.k === 'size');
+
+    return x ? +x.v : null;
+}
+
+function commonSize(stacks) {
+    const sizes = new Set(stacks.map(sizeOf));
+
+    return sizes.size === 1 ? [...sizes][0] : sizes.size ? '' : null;
+}
+
+// Sets the size of the selection a … b to size (base: the text's own size, which
+// needs no tag). At the caret, it's the size of the sized stretch the caret is in.
+// -> a change, or null (the caret isn't in a sized stretch)
+export function setSize(t, a, b, size, base) {
+    if (mathAround(t, a) || (a !== b && mathAround(t, b))) return null;
+
+    const { atoms } = atomize(t);
+    let sel = atoms.filter((A) => A.a >= a && A.b <= b && !A.lead);
+
+    if (a === b) {
+        const v = sizeOf(atomize(t, a).at);
+        if (v == null) return null;
+
+        sel = stretchAt(atoms, a, (A) => sizeOf(A.stack) === v);
+    }
+
+    if (!sel.length) return null;
+
+    const token = { k: 'size', v: String(size) };
+
+    for (const A of sel) {
+        const st = A.stack.filter((x) => x.k !== 'size');
+        A.stack = size === base ? st : st.concat(token);
+    }
+
+    const t2 = serialize(atoms);
+
+    return a === b ? replaceChange(t, t2, sel[0].na + (a - sel[0].a)) : replaceChange(t, t2, sel[0].na, sel.at(-1).nb);
+}
+
+// the atoms next to each other around position k that all pass keep
+function stretchAt(atoms, k, keep) {
+    let i = atoms.findIndex((A) => A.b > k);
+    if (i < 0) i = atoms.length;
+    let j = i;
+    while (i > 0 && keep(atoms[i - 1]) && !atoms[i - 1].lead) i--;
+    while (j < atoms.length && keep(atoms[j]) && !atoms[j].lead) j++;
+
+    return atoms.slice(i, j);
 }
 
 let boxSeq = 0; // new boxes get their own ids, so two boxes side by side stay two
@@ -199,7 +262,7 @@ function formatOffAtCaret(t, a, k) {
     let t2 = t.slice(0, a) + before + after + t.slice(a);
     let caret = a + before.length;
     // drop formats left empty, except one the caret is in
-    const re = /<(sup|sub|u|s|box|mark)\b[^<>]*><\/\1>/g;
+    const re = /<(sup|sub|u|s|box|mark|size)\b[^<>]*><\/\1>/g;
 
     for (let m = re.exec(t2); m; m = re.exec(t2)) {
         const s0 = m.index;

@@ -377,8 +377,8 @@
                                         ><input id="g-doubleSided" type="checkbox" /> Double-sided</label
                                     >
                                 </div>
-                                <div class="srow"><label for="g-size">Size</label><output id="o-size"></output></div>
-                                <input id="g-size" type="range" min="12" max="160" step="1" />
+                                <!-- the main text's size: set from the toolbar -->
+                                <input type="hidden" id="g-size" data-num />
                                 <div id="g-width-row">
                                     <div class="srow">
                                         <label for="g-maxWidth">Line width</label><output id="o-maxWidth"></output>
@@ -777,8 +777,11 @@
                                 <code>&lt;s&gt;</code> and <code>&lt;box&gt;</code> tags work, and so do
                                 <code>x²</code> and <code>H₂O</code>. Highlight with <code>&lt;mark&gt;</code>, which is
                                 yellow, or pick a color: <code>&lt;mark pink&gt;</code> <code>&lt;mark orange&gt;</code>
-                                <code>&lt;mark green&gt;</code> <code>&lt;mark blue&gt;</code>. Straight quotes become
-                                curly ones, and an apostrophe is written like a closing quote.
+                                <code>&lt;mark green&gt;</code> <code>&lt;mark blue&gt;</code>. Select text and set a
+                                size in the toolbar to write just that text larger or smaller (<code
+                                    >&lt;size 48&gt;</code
+                                >). Straight quotes become curly ones, and an apostrophe is written like a closing
+                                quote.
                             </p>
                             <p>
                                 Put math between <code>$</code> signs (or <code>\(</code> and <code>\)</code>, as the

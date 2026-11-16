@@ -24,11 +24,11 @@ export const isBackPage = (o, page) => !!(o.paper === 'lined' && o.doubleSided &
 // Sets each line's baseline, bot and page (units). Ordinary lines sit exactly
 // `lineHeight` apart (one line's descenders and the next one's ascenders share the
 // space between, as in real handwriting); only content taller than letters
-// (fractions, big operators, stacked limits) pushes lines apart. On paper, lines
-// flow onto pages. -> the number of pages
+// (fractions, big operators, stacked limits, larger text) pushes lines apart. On
+// paper, lines flow onto pages, and sit on its lines (drawn on lined paper, unseen
+// on plain): a tall line skips whole lines. -> the number of pages
 export function layOutPages(writer, lines, pg) {
     const { o, style } = writer;
-    const lined = o.paper === 'lined';
     const margin = o.margin / o.size;
     const A = style.zones.A;
     const D = Math.max(style.zones.D, 0.4);
@@ -36,9 +36,8 @@ export function layOutPages(writer, lines, pg) {
 
     const firstBase = (extraTop) => {
         if (!pg) return margin + A + 0.1 + extraTop;
-        if (lined) return pg.top / o.size + rule * Math.max(1, Math.ceil((rule * 0.75 + extraTop) / rule - 1e-6));
 
-        return pg.top / o.size + A + extraTop;
+        return pg.top / o.size + rule * Math.max(1, Math.ceil((rule * 0.75 + extraTop) / rule - 1e-6));
     };
 
     const pageBottom = pg ? (pg.H - pg.bottom) / o.size : Infinity;
@@ -62,10 +61,8 @@ export function layOutPages(writer, lines, pg) {
             baseline = firstBase(extraTop);
         } else {
             const extra = extraTop + prevExtraBot;
-            // on ruled paper skip whole lines, and only when the extra room is substantial
-            const advance = lined
-                ? rule * (1 + (extra > 0.3 * rule ? Math.ceil(extra / rule - 1e-6) : 0))
-                : rule + extra;
+            // on paper skip whole lines, and only when the extra room is substantial
+            const advance = pg ? rule * (1 + (extra > 0.3 * rule ? Math.ceil(extra / rule - 1e-6) : 0)) : rule + extra;
             baseline += advance;
 
             if (baseline + Math.min(bot, D) > pageBottom) {

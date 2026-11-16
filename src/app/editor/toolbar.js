@@ -203,7 +203,8 @@ export function createToolbar(ed) {
         drawListMenu();
     });
 
-    // ---- the size of the text being edited (the main text, or a text box)
+    // ---- the size of the selection (or the sized stretch the caret is in), or else of
+    // the text being edited (the main text, or a text box)
     const sizeIn = $('.fmt-bar .size-n');
 
     const useSize = (v) => {
@@ -222,7 +223,7 @@ export function createToolbar(ed) {
     });
 
     $$('.fmt-bar [data-size-step]').forEach((b) =>
-        b.addEventListener('click', () => useSize(ed.size() + 2 * +b.dataset.sizeStep)),
+        b.addEventListener('click', () => useSize((+ed.size() || ed.baseSize()) + +b.dataset.sizeStep)),
     );
 
     // the buttons show what's on where the caret is

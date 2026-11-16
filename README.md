@@ -236,8 +236,10 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
 - **The toolbar** (above the pages, like the one in Google Docs): undo and redo, the text size,
   underline, strikethrough, superscript, subscript, box, highlighter (with a color menu and
   None), Equation, and Text box.
-  - **Size:** the size of the text being edited, the main text or a text box (− and + step it
-    by 2). The main text's size is also the Size slider under Layout and paper.
+  - **Size:** with text selected, the size of just that text: it's written larger or smaller on
+    the same baseline (as `<size 48>…</size>`), and a line with larger text moves down to make
+    room. With the caret in sized text, it's that text's size. Otherwise it's the size of the
+    whole text being edited, the main text or a text box. − and + step it by 1, or type a size.
   - **Shows the formats in use:** a button is on when every letter of the selection has that
     format, or, with no selection, when the caret is inside it.
   - **Toggles:** pressing a button that's on takes the format off the selection, even part of a
@@ -275,7 +277,8 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
 
 ## Formatting & math
 
-- **Markup:** `<sup>…</sup>`, `<sub>…</sub>`, `<u>…</u>`, or Unicode `x²` `H₂O`.
+- **Markup:** `<sup>…</sup>`, `<sub>…</sub>`, `<u>…</u>`, or Unicode `x²` `H₂O`. `<size 48>…</size>`
+  writes its text at that size (in px, like the text's own size) on the same baseline.
 - **Strikethrough, boxes and highlighter:** `<s>…</s>` crosses words out, and `<box>…</box>` draws a
   box around them. `<mark>…</mark>` highlights them in yellow, and `<mark pink>`, `<mark orange>`,
   `<mark green>` and `<mark blue>` pick other colors. One mark covers a whole run of words.
@@ -362,10 +365,12 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
   pages 2, 4, … are the backs of sheets, so the red margin line is on the right. The writing
   starts near the left edge and runs up to the line. Lines are the same length on both sides,
   so the text wraps the same way.
-- **Line spacing:** ordinary lines are exactly `lineHeight` apart (default 1.55, single-spaced).
-  One line's descenders and the next line's ascenders share the space between them, as in real
-  writing. Only content taller than letters (fractions, big operators, stacked limits) pushes
-  lines apart; on ruled paper that skips a whole rule.
+- **Line spacing:** ordinary lines are exactly `lineHeight` apart (2 in the app, so lined paper's
+  rules sit well clear of the writing; 1.55, single-spaced, for the CLI). One line's descenders
+  and the next line's ascenders share the space between them, as in real writing. Only content
+  taller than letters (fractions, big operators, stacked limits, larger text) pushes lines
+  apart. On paper, lined or plain, lines sit on the page's lines (unseen on plain paper), so
+  that skips whole lines.
 - **PDF** (in the app, `src/app/pdf.js`): each page is rendered at about 240 dpi, so pencil grain and paper
   texture come out exactly as on screen, and embedded in a multi-page PDF. With a transparent
   background, the PDF is one page the size of the writing. The CLI writes SVG only, with pages

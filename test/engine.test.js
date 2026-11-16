@@ -77,6 +77,28 @@ test('text boxes are written at their own size and width, where they were put', 
     assert.deepEqual(res.caretMap.chars, without.caretMap.chars, 'the main text is unchanged');
 });
 
+test('a sized stretch is larger or smaller about the same baseline', () => {
+    const plain = HW.generate(model, 'ab cd', { seed: 1 });
+    const sized = HW.generate(model, 'ab <size 96>cd</size>', { seed: 1 });
+    const cd = (res) => res.caretMap.chars.filter((c) => c.s >= 3);
+    assert.ok(
+        cd(sized).every((c) => c.sc > 1.8),
+        'twice the size',
+    );
+    // (a line slopes a little as it goes)
+    assert.ok(Math.abs(sized.caretMap.chars[0].y - cd(sized)[0].y) < 2, 'on the same baseline');
+    assert.ok(sized.width > plain.width);
+});
+
+test('on plain paper, lines sit on the same lines as lined paper, unseen', () => {
+    const opts = { seed: 1, lineHeight: 2 };
+    const lined = HW.generate(model, 'one\ntwo', { ...opts, paper: 'lined' });
+    const plain = HW.generate(model, 'one\ntwo', { ...opts, paper: 'plain' });
+    const gap = (res) => res.baselines[1] - res.baselines[0];
+    assert.equal(gap(plain), gap(lined));
+    assert.equal(gap(plain), 2 * 48);
+});
+
 test('Cyrillic is written too', () => {
     assert.deepEqual(HW.generate(model, 'Съешь же ещё этих мягких булок', { seed: 1 }).missing, []);
 });

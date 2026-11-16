@@ -18,7 +18,6 @@ export function updateOutputs() {
     };
 
     set('randomness', (+g.randomness).toFixed(2));
-    set('size', g.size + 'px');
     set('maxWidth', g.maxWidth + 'px');
     set('lineHeight', (+g.lineHeight).toFixed(2));
     set('sizeConsistency', Math.round(g.sizeConsistency * 100) + '%');
@@ -98,7 +97,8 @@ for (const k of GEN_KEYS) {
     else el.value = settings.gen[k];
 
     el.addEventListener('input', () => {
-        settings.gen[k] = el.type === 'checkbox' ? el.checked : el.type === 'range' ? +el.value : el.value;
+        settings.gen[k] =
+            el.type === 'checkbox' ? el.checked : el.type === 'range' || 'num' in el.dataset ? +el.value : el.value;
 
         if (k === 'slantOn' && el.checked) {
             settings.gen.slant = Math.round(getModel().style.slantDeg);
