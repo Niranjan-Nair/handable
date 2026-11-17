@@ -72,6 +72,9 @@ test('formats: on and off for a selection, and at the caret', () => {
     assert.equal(u, 'hello <u>world</u>');
     assert.ok(activeFormats(u, a, b).u);
     assert.equal(applied(u, toggleFormat(u, a, b, 'u'))[0], t);
+    const [it] = applied(t, toggleFormat(t, 0, 5, 'i'));
+    assert.equal(it, '<i>hello</i> world', 'italic');
+    assert.ok(activeFormats(it, 4, 4).i);
     const [caret, at] = applied('ab', toggleFormat('ab', 2, 2, 'sup'));
     assert.deepEqual([caret, at], ['ab<sup></sup>', 7]);
 });

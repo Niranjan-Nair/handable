@@ -113,7 +113,7 @@ export function serialize(atoms) {
 const hasFmt = (stack, k, color) => stack.some((x) => x.k === k && (k !== 'mark' || color == null || x.v === color));
 
 // The formats of the selection a … b (every letter in it has them), or of the caret:
-// { sup, sub, u, s, box, mark, color (the highlighter's), size (the size every letter
+// { sup, sub, u, i, s, box, mark, color (the highlighter's), size (the size every letter
 // has: a number, null for the text's own, or '' when they differ), math (in an equation) }
 export function activeFormats(t, a, b) {
     const math = !!mathTouching(t, a, b);
@@ -133,6 +133,7 @@ export function activeFormats(t, a, b) {
         sup: all('sup'),
         sub: all('sub'),
         u: all('u'),
+        i: all('i'),
         s: all('s'),
         box: all('box'),
         mark: all('mark'),
@@ -330,7 +331,7 @@ function formatOffAtCaret(t, a, k) {
     let t2 = t.slice(0, a) + before + after + t.slice(a);
     let caret = a + before.length;
     // drop formats left empty, except one the caret is in
-    const re = /<(sup|sub|u|s|box|mark|size|align)\b[^<>]*><\/\1>/g;
+    const re = /<(sup|sub|u|i|s|box|mark|size|align)\b[^<>]*><\/\1>/g;
 
     for (let m = re.exec(t2); m; m = re.exec(t2)) {
         const s0 = m.index;

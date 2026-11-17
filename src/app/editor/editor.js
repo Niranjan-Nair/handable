@@ -134,7 +134,7 @@ export function createEditor({ ta, map, redraw, regenerate, toolbar }) {
     }
 
     // the shortcuts, as in Google Docs
-    const FORMAT_KEYS = { u: 'u', '.': 'sup', ',': 'sub' };
+    const FORMAT_KEYS = { u: 'u', i: 'i', '.': 'sup', ',': 'sub' };
     const SHIFT_FORMAT_KEYS = { x: 's', h: 'mark' };
     const ALIGN_KEYS = { l: 'left', e: 'center', r: 'right' }; // with ⇧
 

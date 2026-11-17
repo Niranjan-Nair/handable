@@ -24,8 +24,8 @@ function formatRuns(nodes) {
     const runs = [];
 
     for (const nd of nodes) {
-        const deco = { u: nd.u, st: nd.st, box: nd.box, hl: nd.hl, sz: nd.sz };
-        const key = [nd.lv.join(','), nd.u, nd.st, nd.box, nd.hl, nd.sz].join('|');
+        const deco = { u: nd.u, st: nd.st, box: nd.box, hl: nd.hl, sz: nd.sz, it: !!nd.it };
+        const key = [nd.lv.join(','), nd.u, nd.st, nd.box, nd.hl, nd.sz, !!nd.it].join('|');
         const last = runs[runs.length - 1];
         if (nd.t === 'ch' && last && last.chars && last.key === key) {
             last.chars.push(nd.ch);
@@ -51,7 +51,7 @@ export function wordBox(writer, nodes) {
 
         const rb = run.math
             ? mathList(writer, run.math.tree, s, run.math.display)
-            : runBox(writer, run.chars, s, { start: ci, n: nChars, prev: prevCh, sis: run.sis });
+            : runBox(writer, run.chars, s, { start: ci, n: nChars, prev: prevCh, sis: run.sis, cursive: run.it });
 
         // an equation is one place for a caret (it's edited as TeX once the caret is inside)
         if (run.math && run.math.si != null)

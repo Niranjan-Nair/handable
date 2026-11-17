@@ -53,13 +53,14 @@ const SUB_MAP = {
 };
 
 // A format tag: <sup> <sub> <u> <s> (or <del>, <strike>) <box> <mark> (with a color:
-// <mark pink>, <mark color="pink">) <size> (with a size in px: <size 24>) <align>
+// <mark pink>, <mark color="pink">) <i> (italic: written in cursive) <size> (with a
+// size in px: <size 24>) <align>
 // (a paragraph's: <align center>, <align right>); groups: closing /, name, value (the
 // color, size or alignment)
 export const FORMAT_TAG =
-    /<(\/?)(sup|sub|u|s|del|strike|box|mark|size|align)(?:\s+(?:colou?r\s*=\s*)?["']?([a-z]+|\d+(?:\.\d+)?)["']?)?\s*>/i;
+    /<(\/?)(sup|sub|u|s|del|strike|box|mark|size|align|i)(?:\s+(?:colou?r\s*=\s*)?["']?([a-z]+|\d+(?:\.\d+)?)["']?)?\s*>/i;
 // any format tag, for stripping them out of a stretch of text
-export const ANY_FORMAT_TAG = /<\/?(?:sup|sub|u|s|del|strike|box|mark|size|align)\b[^<>]*>/gi;
+export const ANY_FORMAT_TAG = /<\/?(?:sup|sub|u|s|del|strike|box|mark|size|align|i)\b[^<>]*>/gi;
 
 const TAG_HERE = new RegExp('^' + FORMAT_TAG.source, 'i');
 
@@ -95,8 +96,8 @@ function smartQuote(src, i, q) {
 //   { t: 'ch', ch, lv, ...deco }    character; lv = nested script levels ['sup'|'sub']
 //   { t: 'math', tree, lv, ...deco } inline TeX
 // deco: u (underline), st (strikethrough), box (id of the <box> it's in), hl (highlighter color),
-// sz (its size in px, or null: the text's own)
-// Markup: <sup> <sub> <u> <s> <box> <mark pink|orange|yellow|green|blue> <size 24>, Unicode ² ₂,
+// sz (its size in px, or null: the text's own), it (true when it's italic: cursive)
+// Markup: <sup> <sub> <u> <s> <i> <box> <mark pink|orange|yellow|green|blue> <size 24>, Unicode ² ₂,
 // <align center|right> around a paragraph's text (the paragraph gets align: 'center' | 'right'),
 // $…$ inline math, $$…$$ display math (own centered line), \$ for a literal dollar sign.
 // Every node knows where it came from in the text (si … se), and so does every
@@ -141,6 +142,7 @@ class RichParser {
         this.lv = []; // script levels
         this.u = 0;
         this.st = 0;
+        this.it = 0;
         this.boxes = [];
         this.boxSeq = 0;
         this.marks = [];
@@ -208,6 +210,7 @@ class RichParser {
             box: boxes.length ? boxes[boxes.length - 1] : 0,
             hl: marks.length ? marks[marks.length - 1] : null,
             sz: this.sizes.length ? this.sizes[this.sizes.length - 1] : null,
+            ...(this.it > 0 && { it: true }),
         };
     }
 
@@ -383,6 +386,7 @@ class RichParser {
         const closing = !!m[1];
         const step = closing ? -1 : 1;
         if (name === 'u') this.u = Math.max(0, this.u + step);
+        else if (name === 'i') this.it = Math.max(0, this.it + step);
         else if (name === 's' || name === 'del' || name === 'strike') this.st = Math.max(0, this.st + step);
         else if (name === 'align') {
             if (closing) this.aligns.pop();

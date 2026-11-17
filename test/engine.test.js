@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as HW from '../src/engine/index.js';
 import { glyphs } from '../src/engine/model/basefont.js';
+import { joinLetters } from '../src/engine/layout/cursive.js';
 import { makeDataset } from './fixtures.js';
 
 const data = makeDataset(glyphs);
@@ -110,6 +111,25 @@ test('aligned paragraphs: centered and right-aligned in the room their lines hav
     const last = res.caretMap.chars.filter((c) => c.line === 1).at(-1);
     assert.ok(Math.abs(last.x1 - (res.width - 192)) < 5, 'ends at the right margin');
     assert.ok(lineOf('x\n<align center>hi</align>', 0).x < 200, 'only its own paragraph');
+});
+
+test('italic is cursive: each letter runs on into the next, without a pen lift', () => {
+    const line = (x0, y0, x1, y1) => [
+        { x: x0, y: y0, w: 1 },
+        { x: x1, y: y1, w: 1 },
+    ];
+    // an n-like letter, then an i (its dot drawn last), placed side by side
+    const a = { g: { strokes: [line(0, -0.5, 0, 0), line(0, -0.4, 0.3, 0)] }, x: 0, y: 0, s: 1 };
+    const b = { g: { strokes: [line(0, -0.5, 0, 0), line(0, -0.7, 0.01, -0.7)] }, x: 0.5, y: 0, s: 1 };
+    joinLetters(a, b);
+    const out = a.g.strokes[1];
+    assert.deepEqual([out.at(-1).x, out.at(-1).y], [0.5, -0.5], "from a's exit to b's entry");
+    assert.ok(out.joinedEnd && b.g.strokes[0].joinedStart, 'no ink pools where they join');
+    assert.equal(a.g.strokes[0].length, 2, 'the other strokes are left as they were');
+
+    const res = HW.generate(model, '<i>minimum</i> word', { seed: 1 });
+    assert.deepEqual(res.missing, []);
+    assert.equal(res.caretMap.chars.length, 12, 'every letter still has its place');
 });
 
 test('Cyrillic is written too', () => {

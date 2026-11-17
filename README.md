@@ -234,7 +234,7 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
   At the end of a format, the first → steps out of it, so what you type next is plain. A format
   emptied by Backspace is removed with its last letter, in one undo step.
 - **The toolbar** (above the pages, like the one in Google Docs): undo and redo, the text size,
-  underline, strikethrough, superscript, subscript, box, highlighter (with a color menu and
+  italic, underline, strikethrough, superscript, subscript, box, highlighter (with a color menu and
   None), lists, alignment, Equation, and Text box.
   - **Size:** with text selected, the size of just that text: it's written larger or smaller on
     the same baseline (as `<size 48>…</size>`), and a line with larger text moves down to make
@@ -256,7 +256,12 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
     written as `<align center>…</align>` or `<align right>…</align>` around a paragraph's text.
     Lines are centered or pushed right within the room they have (after an indent, within a
     text box's width); without paper, the page takes the full width to align in.
-  - **Shortcuts:** ⌘U underline, ⌘. superscript, ⌘, subscript, ⌘⇧X strikethrough, ⌘⇧H highlight,
+  - **Italic is cursive:** italic text (`<i>…</i>`, ⌘I) is written slanted, with the letters
+    of each word joined up: each letter's last main stroke runs on, in a curve, to where the
+    next one starts (not from a dot or a t's cross), with no pen lift, so no ink pools there.
+    Your own joined letters are used wherever you have them, and the letters sit a little
+    closer. It's a quick way to make cursive pages, for testing how cursive is read.
+  - **Shortcuts:** ⌘I italic, ⌘U underline, ⌘. superscript, ⌘, subscript, ⌘⇧X strikethrough, ⌘⇧H highlight,
     ⌘⇧L, ⌘⇧E and ⌘⇧R align left, center and right (Ctrl on Windows and Linux).
 - **Equations:** an equation is written out as math until the caret goes inside it, by a click
   or the arrow keys. Then its TeX is written instead, in a dashed box, until you leave it again.

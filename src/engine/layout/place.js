@@ -69,30 +69,34 @@ function createPlacer(writer, nPages) {
 
             // ink pools a little where the pen lands and thins where it lifts off
             // (a pencil doesn't pool)
-            for (const s of strokes) {
-                if (polyLength(s) < penPx * 1.5) continue;
+            // (not where cursive letters join: the pen doesn't lift there)
+            strokes.forEach((s, i) => {
+                if (polyLength(s) < penPx * 1.5 || pencil) return;
 
                 const e = s[s.length - 1];
-                if (pencil) continue;
+                const src = g.strokes[i];
 
-                placer.page.inkEnds.push({
+                const down = {
                     x: s[0].x,
                     y: s[0].y,
                     r: penPx * rng.range(1.6, 2.6),
                     a: endA * rng.range(0.5, 1),
                     down: true,
                     line: placer.line,
-                });
+                };
 
-                placer.page.inkEnds.push({
+                const up = {
                     x: e.x,
                     y: e.y,
                     r: penPx * rng.range(2, 3.5),
                     a: endA * rng.range(0.5, 1.2),
                     down: false,
                     line: placer.line,
-                });
-            }
+                };
+
+                if (!src.joinedStart) placer.page.inkEnds.push(down);
+                if (!src.joinedEnd) placer.page.inkEnds.push(up);
+            });
 
             placer.usedW = Math.max(placer.usedW, gx + (g.width || 0) * sc);
         },

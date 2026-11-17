@@ -1,11 +1,13 @@
 // A run of plain characters sharing one format, written as letters (and the
-// writer's own joined ligatures).
+// writer's own joined ligatures), or in cursive: slanted, and joined up.
 import { unitProb } from '../model/sequences.js';
 import { addBox, charBox, emptyBox } from './boxes.js';
+import { joinLetters } from './cursive.js';
 
 // The run cut into what gets written: single letters, and pairs or triples written
-// as one of the writer's ligatures about as often as they join them.
-function tokenize(writer, chars) {
+// as one of the writer's ligatures about as often as they join them (in cursive,
+// whenever there is one).
+function tokenize(writer, chars, cursive) {
     const { model, rng, o, formality } = writer;
     const n = chars.length;
     const tokens = [];
@@ -19,7 +21,7 @@ function tokenize(writer, chars) {
 
                 const str = chars.slice(i, i + L).join('');
 
-                if (model.units[str] && rng() < unitProb(model, str) * (1 - formality)) {
+                if (model.units[str] && (cursive || rng() < unitProb(model, str) * (1 - formality))) {
                     tok = { s: str, i, L, unit: true };
                     break;
                 }
@@ -35,18 +37,22 @@ function tokenize(writer, chars) {
 }
 
 // info: { start (index of the run's first letter in its word), n (letters in the
-// word), prev (the letter before the run), font, sis (source ranges per letter) }
+// word), prev (the letter before the run), font, sis (source ranges per letter),
+// cursive }
 export function runBox(writer, chars, s, info) {
     const b = emptyBox();
+    const { cursive } = info;
+    const font = info.font || (cursive ? 'it' : undefined);
+    const isLetter = (c) => /\p{L}/u.test(c);
     let x = 0;
     let prev = null;
 
-    tokenize(writer, chars).forEach((t, k) => {
+    tokenize(writer, chars, cursive).forEach((t, k) => {
         const gi = info.start + t.i;
         const N = info.n;
         const ctx = N === t.L ? 'solo' : gi === 0 ? 'start' : gi + t.L === N ? 'end' : 'mid';
-        if (k > 0) x += writer.letterGap() * s;
-        const extra = { prev: t.i ? chars[t.i - 1] : info.prev, font: info.font };
+        if (k > 0) x += writer.letterGap() * s * (cursive ? 0.6 : 1);
+        const extra = { prev: t.i ? chars[t.i - 1] : info.prev, font };
 
         // the same letter written back-to-back ("ll", "ee", "ss") keeps the same form
         if (prev && prev.t.s === t.s && prev.g) {
@@ -55,9 +61,13 @@ export function runBox(writer, chars, s, info) {
         }
 
         const { b: cb, g } = charBox(writer, t.s, s, ctx, extra);
-        prev = { t, g };
         if (g && t.unit) writer.note('ligatures', t.s);
         addBox(b, cb, x, 0);
+        const item = g && b.items.at(-1);
+        // in cursive, a letter runs on into the next one
+        if (cursive && item && prev && prev.item && isLetter(prev.t.s.at(-1)) && isLetter(t.s[0]))
+            joinLetters(prev.item, item);
+        prev = { t, g, item };
 
         // a joined pair or triple shares its width between its letters
         if (info.sis) {
