@@ -231,8 +231,9 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
     writes everything again.
 - **Formatting is shown, not its markup:** subscripts, superscripts, underlines, strikes, boxes
   and highlighter appear as they'll be written. The arrow keys and Backspace step over the tags.
-  At the end of a format, the first → steps out of it, so what you type next is plain. A format
-  emptied by Backspace is removed with its last letter, in one undo step.
+  At the end of a format, the first → steps out of it, so what you type next is plain. Once Backspace has
+  deleted a format's last letter, what you type next is still in it; one more Backspace
+  takes the empty format's tags away (never part of a tag).
 - **The toolbar** (above the pages, like the one in Google Docs): undo and redo, the text size,
   italic, underline, strikethrough, superscript, subscript, box, highlighter (with a color menu and
   None), lists, alignment, Equation, and Text box.

@@ -118,6 +118,18 @@ test('the caret steps over markup and into equations', () => {
     assert.equal(stepRight('$x$ y', 0), 1, 'into the equation');
 });
 
+test('Backspace in an emptied format takes the format away, and never cuts into a tag', () => {
+    assert.deepEqual(applied('ab <u></u>', deleteAt('ab <u></u>', 6, false)), ['ab ', 3, 3]);
+    assert.deepEqual(
+        applied('<i><u></u></i>', deleteAt('<i><u></u></i>', 6, false)),
+        ['<i></i>', 3, 3],
+        'one at a time',
+    );
+    assert.deepEqual(applied('x<u></u>', deleteAt('x<u></u>', 4, true)), ['x', 1, 1], 'Delete too');
+    assert.deepEqual(deleteAt('<u>cd</u>', 3, false), { selA: 3 }, 'nothing before it: nothing to delete');
+    assert.deepEqual(deleteAt('<u>cd</u>', 5, true), { selA: 5 }, 'nothing after it either');
+});
+
 test('deleting an equation delimiter deletes the equation', () => {
     assert.deepEqual(deleteAt('a $x$ b', 5, false), { a: 2, b: 5, str: '', selA: 2 });
     assert.equal(deleteAt('ab', 2, false), null, 'an ordinary character: the usual delete');

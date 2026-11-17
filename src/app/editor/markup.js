@@ -106,19 +106,36 @@ export function stepLeft(t, k) {
 // Backspace (forward: Delete) with the caret at k and nothing selected: markup is
 // skipped to the letter before (after) it, and one of an equation's $ signs takes
 // the whole equation, so no other $ is paired up differently. A format left empty
-// (<sup></sup>) goes too, in the same step. -> a change, or null for the usual delete
+// (<sup></sup>) goes too, in the same step, and in an empty format the key takes
+// just the format away. A tag is never cut into. -> a change, or null for the usual
+// delete
 export function deleteAt(t, k, forward) {
+    const empty = emptyFormatAt(t, k);
+    if (empty) return { a: empty.a, b: empty.b, str: '', selA: empty.a };
+
     let j = k;
     if (forward) for (let m = tagAt(t, j); m; m = tagAt(t, j)) j = m.end;
     else for (let q = tagBefore(t, j); q >= 0; q = tagBefore(t, j)) j = q;
     const M = delimiterAt(t, forward ? j : j - 1);
     if (M) return { a: M.a, b: M.b, str: '', selA: M.a };
-    if (forward ? j === k || j >= t.length : j === k || j <= 0) return null;
+    if (j === k) return null;
+    if (forward ? j >= t.length : j <= 0) return { selA: k }; // only tags that way: nothing to delete
     if (forward) return removeRange(t, j, j + cpAt(t, j), k);
 
     const n = cpBefore(t, j);
 
     return removeRange(t, j - n, j, k - n);
+}
+
+// the empty format the caret at k is in (<u>|</u>): { a, b } (its tags), or null
+function emptyFormatAt(t, k) {
+    const open = tagBefore(t, k);
+    const close = tagAt(t, k);
+    if (open < 0 || !close || !close.closing) return null;
+
+    const o = tagAt(t, open);
+
+    return !o.closing && o.name === close.name ? { a: open, b: close.end } : null;
 }
 
 // delete t[a … b) with the caret ending at k; a format left empty by it goes too
