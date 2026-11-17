@@ -262,7 +262,8 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
     Your own joined letters are used wherever you have them, and the letters sit a little
     closer. It's a quick way to make cursive pages, for testing how cursive is read.
   - **Shortcuts:** ⌘I italic, ⌘U underline, ⌘. superscript, ⌘, subscript, ⌘⇧X strikethrough, ⌘⇧H highlight,
-    ⌘⇧L, ⌘⇧E and ⌘⇧R align left, center and right (Ctrl on Windows and Linux).
+    ⌘⇧L and ⌘⇧E align left and center (Ctrl on Windows and Linux). Right alignment has no
+    shortcut: ⌘⇧R is the browser's hard reload, which mustn't change the text.
 - **Equations:** an equation is written out as math until the caret goes inside it, by a click
   or the arrow keys. Then its TeX is written instead, in a dashed box, until you leave it again.
   Deleting one of an equation's `$` signs deletes the whole equation, both signs included, as

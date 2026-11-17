@@ -136,7 +136,9 @@ export function createEditor({ ta, map, redraw, regenerate, toolbar }) {
     // the shortcuts, as in Google Docs
     const FORMAT_KEYS = { u: 'u', i: 'i', '.': 'sup', ',': 'sub' };
     const SHIFT_FORMAT_KEYS = { x: 's', h: 'mark' };
-    const ALIGN_KEYS = { l: 'left', e: 'center', r: 'right' }; // with ⇧
+    // with ⇧ (not ⌘⇧R for right, as in Google Docs: it's the browser's hard reload, and a
+    // reload must never change the text)
+    const ALIGN_KEYS = { l: 'left', e: 'center' };
 
     function shortcut(e) {
         if (!(e.metaKey || e.ctrlKey) || e.altKey) return false;
@@ -156,7 +158,7 @@ export function createEditor({ ta, map, redraw, regenerate, toolbar }) {
             return true;
         }
 
-        // ⌘⇧L, ⌘⇧E, ⌘⇧R: align left, center, right
+        // ⌘⇧L, ⌘⇧E: align left, center
         const align = e.shiftKey && ALIGN_KEYS[e.key.toLowerCase()];
 
         if (align) {
