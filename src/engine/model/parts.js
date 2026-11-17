@@ -2,7 +2,7 @@
 // in the base font, which cuts it into parts (bowls, stems, arches …). An untrained
 // character is then built from the writer's parts that match its own skeleton's.
 import { bbox, centroid, dist, polyLength, resample } from '../geometry.js';
-import { baseGlyph } from './skeleton.js';
+import { baseGlyph, skeletonKey } from './skeleton.js';
 import { classify, skeletonTransform } from './style.js';
 import { clamp } from '../util.js';
 
@@ -312,14 +312,15 @@ function shapeDist(a, b) {
     return f <= r ? { d: f / n, rev: false } : { d: r / n, rev: true };
 }
 
-// Plan for an untrained character: each base segment is either borrowed from
-// the writer's matching part (moved & scaled into place) or, failing that,
-// taken from the style-mapped base skeleton.
-export function inferPlan(model, ch) {
-    if (ch in model.inferCache) return model.inferCache[ch];
+// Plan for an untrained character (cursive: for its cursive form): each base segment
+// is either borrowed from the writer's matching part (moved & scaled into place) or,
+// failing that, taken from the style-mapped base skeleton.
+export function inferPlan(model, ch, cursive = false) {
+    const key = skeletonKey(ch, cursive);
+    if (key in model.inferCache) return model.inferCache[key];
 
-    const b = baseGlyph(ch);
-    if (!b) return (model.inferCache[ch] = null);
+    const b = baseGlyph(ch, cursive);
+    if (!b) return (model.inferCache[key] = null);
 
     const T = skeletonTransform(model.style, ch);
     const cls = classify(ch);
@@ -382,7 +383,7 @@ export function inferPlan(model, ch) {
         });
     });
 
-    return (model.inferCache[ch] = { char: ch, strokes, sources: Array.from(sources).sort(), matched, total });
+    return (model.inferCache[key] = { char: ch, strokes, sources: Array.from(sources).sort(), matched, total });
 }
 
 // all candidates nearly as good as the best one (picked at random per glyph)

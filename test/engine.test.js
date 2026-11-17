@@ -118,14 +118,17 @@ test('italic is cursive: each letter runs on into the next, without a pen lift',
         { x: x0, y: y0, w: 1 },
         { x: x1, y: y1, w: 1 },
     ];
-    // an n-like letter, then an i (its dot drawn last), placed side by side
-    const a = { g: { strokes: [line(0, -0.5, 0, 0), line(0, -0.4, 0.3, 0)] }, x: 0, y: 0, s: 1 };
-    const b = { g: { strokes: [line(0, -0.5, 0, 0), line(0, -0.7, 0.01, -0.7)] }, x: 0.5, y: 0, s: 1 };
+    // two cursive letters side by side, each joining by its first stroke; b's dot comes after
+    const a = { g: { cursive: true, strokes: [line(0, -0.5, 0.1, 0), line(0, -0.7, 0.01, -0.7)] }, x: 0, y: 0, s: 1 };
+    const b = { g: { cursive: true, strokes: [line(0, 0, 0.1, -0.5), line(0, -0.7, 0.01, -0.7)] }, x: 0.5, y: 0, s: 1 };
     joinLetters(a, b);
-    const out = a.g.strokes[1];
-    assert.deepEqual([out.at(-1).x, out.at(-1).y], [0.5, -0.5], "from a's exit to b's entry");
+    const out = a.g.strokes[0];
+    assert.deepEqual([out.at(-1).x, out.at(-1).y], [0.5, 0], "from a's exit to b's entry");
     assert.ok(out.joinedEnd && b.g.strokes[0].joinedStart, 'no ink pools where they join');
-    assert.equal(a.g.strokes[0].length, 2, 'the other strokes are left as they were');
+    assert.equal(a.g.strokes[1].length, 2, 'a dot is never joined');
+    const plain = { g: { strokes: [line(0, 0, 0.1, 0)] }, x: 1, y: 0, s: 1 };
+    joinLetters(b, plain);
+    assert.equal(b.g.strokes[0].length, 2, 'only cursive letters join (not capitals, digits …)');
 
     const res = HW.generate(model, '<i>minimum</i> word', { seed: 1 });
     assert.deepEqual(res.missing, []);

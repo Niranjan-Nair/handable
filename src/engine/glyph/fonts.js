@@ -30,7 +30,7 @@ export function styleGlyph(g, font, rng, r = 1) {
     };
 
     const keep = {};
-    for (const k of ['variant', 'picks', 'inferred']) if (g[k] != null) keep[k] = g[k];
+    for (const k of ['variant', 'picks', 'inferred', 'cursive']) if (g[k] != null) keep[k] = g[k];
 
     return finishGlyph(g.char, restyle(shape), keep);
 }

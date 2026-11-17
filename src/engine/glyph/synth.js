@@ -218,9 +218,22 @@ const LOOKALIKE = {
     '“': '"',
 };
 
+// A letter in cursive (extra.cursive): its cursive form, built from the writer's own
+// strokes where they match it, like an untrained letter. Its first stroke is the one
+// that joins (see layout/cursive.js). -> a glyph, or null if it has no cursive form
+function cursiveGlyph(model, ch, rng, o, extra) {
+    const plan = inferPlan(model, ch, true);
+    if (!plan) return null;
+
+    return Object.assign(synthInferred(model, plan, rng, o, extra), { inferred: false, cursive: true });
+}
+
 // Synthesize one new instance of `ch`. Returns null if the character is unknown
 // (not trained, and inference is off or there is no base skeleton for it).
 export function synthGlyph(model, ch, ctx, rng, o, extra = {}) {
+    const cursive = extra.cursive && cursiveGlyph(model, ch, rng, o, extra);
+    if (cursive) return cursive;
+
     const like = LOOKALIKE[ch];
     if (like && !model.chars[ch] && (model.chars[like] || !baseGlyph(ch))) ch = like;
     const entry = model.chars[ch] || (model.units && model.units[ch]);

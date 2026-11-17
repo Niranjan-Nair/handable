@@ -256,11 +256,16 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
     written as `<align center>…</align>` or `<align right>…</align>` around a paragraph's text.
     Lines are centered or pushed right within the room they have (after an indent, within a
     text box's width); without paper, the page takes the full width to align in.
-  - **Italic is cursive:** italic text (`<i>…</i>`, ⌘I) is written slanted, with the letters
-    of each word joined up: each letter's last main stroke runs on, in a curve, to where the
-    next one starts (not from a dot or a t's cross), with no pen lift, so no ink pools there.
-    Your own joined letters are used wherever you have them, and the letters sit a little
-    closer. It's a quick way to make cursive pages, for testing how cursive is read.
+  - **Italic is cursive:** italic text (`<i>…</i>`, ⌘I) is written in running hand. Its
+    lowercase letters have cursive forms (`basefont.js`): looped b, f, h, k and l, descender
+    loops on g, j, y and z, the cursive r and s, and an exit stroke on every letter. They're
+    built from your own strokes where they match, like a letter you haven't trained, and
+    slanted. Within a word, each letter's first stroke runs on, in a curve, into the next
+    one's (`layout/cursive.js`), with no pen lift and so no pooled ink. After a letter that
+    leaves high (b, o, v, w), the next one is entered at that height, as in "on". Dots,
+    t-crosses and accents are written afterwards and never joined. Capitals, digits and
+    punctuation stay printed. It's a quick way to make cursive pages, for testing how
+    cursive is read.
   - **Shortcuts:** ⌘I italic, ⌘U underline, ⌘. superscript, ⌘, subscript, ⌘⇧X strikethrough, ⌘⇧H highlight,
     ⌘⇧L and ⌘⇧E align left and center (Ctrl on Windows and Linux). Right alignment has no
     shortcut: ⌘⇧R is the browser's hard reload, which mustn't change the text.

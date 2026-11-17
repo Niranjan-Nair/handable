@@ -145,7 +145,7 @@ export function normalizeSizes(byChar, style, s) {
         const medTop = median(glyphs.map((g) => g.minY));
         const medBot = median(glyphs.map((g) => g.maxY));
         const cs = Array.from(ch);
-        const bs = cs.map(baseGlyph);
+        const bs = cs.map((c) => baseGlyph(c));
         const b = cs.length === 1 ? bs[0] : null;
         let eTop = medTop;
         let eBot = medBot;

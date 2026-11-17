@@ -5,8 +5,8 @@ import { addBox, charBox, emptyBox } from './boxes.js';
 import { joinLetters } from './cursive.js';
 
 // The run cut into what gets written: single letters, and pairs or triples written
-// as one of the writer's ligatures about as often as they join them (in cursive,
-// whenever there is one).
+// as one of the writer's ligatures about as often as they join them (not in cursive,
+// which has its own letters and joins).
 function tokenize(writer, chars, cursive) {
     const { model, rng, o, formality } = writer;
     const n = chars.length;
@@ -15,13 +15,13 @@ function tokenize(writer, chars, cursive) {
     for (let i = 0; i < n;) {
         let tok = null;
 
-        if (o.ligatures !== false) {
+        if (o.ligatures !== false && !cursive) {
             for (const L of [3, 2]) {
                 if (i + L > n) continue;
 
                 const str = chars.slice(i, i + L).join('');
 
-                if (model.units[str] && (cursive || rng() < unitProb(model, str) * (1 - formality))) {
+                if (model.units[str] && rng() < unitProb(model, str) * (1 - formality)) {
                     tok = { s: str, i, L, unit: true };
                     break;
                 }
@@ -43,7 +43,6 @@ export function runBox(writer, chars, s, info) {
     const b = emptyBox();
     const { cursive } = info;
     const font = info.font || (cursive ? 'it' : undefined);
-    const isLetter = (c) => /\p{L}/u.test(c);
     let x = 0;
     let prev = null;
 
@@ -52,7 +51,7 @@ export function runBox(writer, chars, s, info) {
         const N = info.n;
         const ctx = N === t.L ? 'solo' : gi === 0 ? 'start' : gi + t.L === N ? 'end' : 'mid';
         if (k > 0) x += writer.letterGap() * s * (cursive ? 0.6 : 1);
-        const extra = { prev: t.i ? chars[t.i - 1] : info.prev, font };
+        const extra = { prev: t.i ? chars[t.i - 1] : info.prev, font, cursive };
 
         // the same letter written back-to-back ("ll", "ee", "ss") keeps the same form
         if (prev && prev.t.s === t.s && prev.g) {
@@ -65,8 +64,7 @@ export function runBox(writer, chars, s, info) {
         addBox(b, cb, x, 0);
         const item = g && b.items.at(-1);
         // in cursive, a letter runs on into the next one
-        if (cursive && item && prev && prev.item && isLetter(prev.t.s.at(-1)) && isLetter(t.s[0]))
-            joinLetters(prev.item, item);
+        if (cursive && item && prev && prev.item) joinLetters(prev.item, item);
         prev = { t, g, item };
 
         // a joined pair or triple shares its width between its letters
