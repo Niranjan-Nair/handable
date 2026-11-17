@@ -259,14 +259,18 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
     text box's width); without paper, the page takes the full width to align in.
   - **Italic is cursive:** italic text (`<i>…</i>`, ⌘I) is written in running hand. Its
     lowercase letters have cursive forms (`basefont.js`): looped b, f, h, k and l, descender
-    loops on g, j, y and z, the cursive r and s, and an exit stroke on every letter. They're
-    built from your own strokes where they match, like a letter you haven't trained, and
-    slanted. Within a word, each letter's first stroke runs on, in a curve, into the next
-    one's (`layout/cursive.js`), with no pen lift and so no pooled ink. After a letter that
-    leaves high (b, o, v, w), the next one is entered at that height, as in "on". Dots,
-    t-crosses and accents are written afterwards and never joined. Capitals, digits and
-    punctuation stay printed. It's a quick way to make cursive pages, for testing how
-    cursive is read.
+    loops on g, j, y and z, the cursive r and s. They're built from your own strokes where
+    they match, like a letter you haven't trained, and slanted. Each letter is its body
+    alone: it starts where the pen comes into it (the top of i or u, part way up a loop, the
+    rise into n or e, the top of a's bowl) and ends on a turn heading right. The strokes
+    between letters are drawn as the word is written (`layout/cursive.js`): on the way the
+    last letter was going, and into the next one the way it begins (smoothly up into a loop
+    or the rise into n, or up to a point where the pen turns down, as in i, u and r), a
+    little different each time, with no pen lift. After a letter that leaves high (b, o, v,
+    w) the next is entered at that height, as in "on". A word starts with a short lead-in and
+    ends with a short exit. Dots, t-crosses and accents come afterwards and are never joined.
+    Capitals, digits and punctuation stay printed. It's a quick way to make cursive pages,
+    for testing how cursive is read.
   - **Shortcuts:** ⌘I italic, ⌘U underline, ⌘. superscript, ⌘, subscript, ⌘⇧X strikethrough, ⌘⇧H highlight,
     ⌘⇧L and ⌘⇧E align left and center (Ctrl on Windows and Linux). Right alignment has no
     shortcut: ⌘⇧R is the browser's hard reload, which mustn't change the text.

@@ -113,22 +113,31 @@ test('aligned paragraphs: centered and right-aligned in the room their lines hav
     assert.ok(lineOf('x\n<align center>hi</align>', 0).x < 200, 'only its own paragraph');
 });
 
-test('italic is cursive: each letter runs on into the next, without a pen lift', () => {
+test('italic is cursive: the pen runs on from each letter into the next', () => {
+    const rng = HW.makeRng(1);
     const line = (x0, y0, x1, y1) => [
         { x: x0, y: y0, w: 1 },
+        { x: (x0 + x1) / 2, y: (y0 + y1) / 2, w: 1 },
         { x: x1, y: y1, w: 1 },
     ];
-    // two cursive letters side by side, each joining by its first stroke; b's dot comes after
-    const a = { g: { cursive: true, strokes: [line(0, -0.5, 0.1, 0), line(0, -0.7, 0.01, -0.7)] }, x: 0, y: 0, s: 1 };
-    const b = { g: { cursive: true, strokes: [line(0, 0, 0.1, -0.5), line(0, -0.7, 0.01, -0.7)] }, x: 0.5, y: 0, s: 1 };
-    joinLetters(a, b);
+    // two cursive letters side by side, each joining by its first stroke; their dots come after
+    const letter = (x) => ({
+        g: { cursive: true, strokes: [line(0.1, -0.5, 0.1, 0), line(0.1, -0.7, 0.11, -0.7)] },
+        x,
+        y: 0,
+        s: 1,
+    });
+    const a = letter(0);
+    const b = letter(0.5);
+    assert.ok(joinLetters(a, b, rng, 1));
     const out = a.g.strokes[0];
-    assert.deepEqual([out.at(-1).x, out.at(-1).y], [0.5, 0], "from a's exit to b's entry");
+    assert.deepEqual([out.at(-1).x, out.at(-1).y], [0.6, -0.5], "a's stroke runs on to where b's starts");
     assert.ok(out.joinedEnd && b.g.strokes[0].joinedStart, 'no ink pools where they join');
-    assert.equal(a.g.strokes[1].length, 2, 'a dot is never joined');
-    const plain = { g: { strokes: [line(0, 0, 0.1, 0)] }, x: 1, y: 0, s: 1 };
-    joinLetters(b, plain);
-    assert.equal(b.g.strokes[0].length, 2, 'only cursive letters join (not capitals, digits …)');
+    assert.equal(a.g.strokes[1].length, 3, 'a dot is never joined');
+    assert.ok(
+        !joinLetters(b, { g: { strokes: [line(0, 0, 0.1, 0)] }, x: 1, y: 0, s: 1 }, rng, 1),
+        'only cursive letters join',
+    );
 
     const res = HW.generate(model, '<i>minimum</i> word', { seed: 1 });
     assert.deepEqual(res.missing, []);

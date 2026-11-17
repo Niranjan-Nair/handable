@@ -2,7 +2,7 @@
 // writer's own joined ligatures), or in cursive: slanted, and joined up.
 import { unitProb } from '../model/sequences.js';
 import { addBox, charBox, emptyBox } from './boxes.js';
-import { joinLetters } from './cursive.js';
+import { joinLetters, leadIn, leadOut } from './cursive.js';
 
 // The run cut into what gets written: single letters, and pairs or triples written
 // as one of the writer's ligatures about as often as they join them (not in cursive,
@@ -45,12 +45,16 @@ export function runBox(writer, chars, s, info) {
     const font = info.font || (cursive ? 'it' : undefined);
     let x = 0;
     let prev = null;
+    // (cursive) the letters nothing joins into, and those that join on into nothing
+    const starts = [];
+    const ends = [];
 
     tokenize(writer, chars, cursive).forEach((t, k) => {
         const gi = info.start + t.i;
         const N = info.n;
         const ctx = N === t.L ? 'solo' : gi === 0 ? 'start' : gi + t.L === N ? 'end' : 'mid';
-        if (k > 0) x += writer.letterGap() * s * (cursive ? 0.6 : 1);
+        // (cursive letters are their bodies alone: the joins between them need room)
+        if (k > 0) x += (writer.letterGap() + (cursive ? 0.05 : 0)) * s;
         const extra = { prev: t.i ? chars[t.i - 1] : info.prev, font, cursive };
 
         // the same letter written back-to-back ("ll", "ee", "ss") keeps the same form
@@ -64,7 +68,9 @@ export function runBox(writer, chars, s, info) {
         addBox(b, cb, x, 0);
         const item = g && b.items.at(-1);
         // in cursive, a letter runs on into the next one
-        if (cursive && item && prev && prev.item) joinLetters(prev.item, item);
+        const joined = cursive && item && prev && prev.item && joinLetters(prev.item, item, writer.rng, writer.r);
+        if (prev && prev.item && !joined) ends.push(prev.item);
+        if (item && !joined) starts.push(item);
         prev = { t, g, item };
 
         // a joined pair or triple shares its width between its letters
@@ -85,6 +91,13 @@ export function runBox(writer, chars, s, info) {
 
         x += cb.w;
     });
+
+    if (prev && prev.item) ends.push(prev.item);
+
+    if (cursive) {
+        for (const it of starts) leadIn(it, writer.rng, writer.r);
+        for (const it of ends) leadOut(it, writer.rng, writer.r);
+    }
 
     b.w = x;
 
