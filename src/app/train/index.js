@@ -40,6 +40,8 @@ $$('.seg button').forEach((b) =>
         $('#combos-mode').hidden = ui.trainMode !== 'combos' && ui.trainMode !== 'sentences';
         $('#combo-only').hidden = ui.trainMode !== 'combos';
         $('#sentence-only').hidden = ui.trainMode !== 'sentences';
+        $('.s-cursive-row').hidden = ui.trainMode !== 'sentences';
+        $('#s-target').classList.toggle('cursive', ui.trainMode === 'sentences' && $('#s-cursive').checked);
         $('#s-another').hidden = ui.trainMode !== 'sentences';
         $('#marks-mode').hidden = ui.trainMode !== 'marks';
         exitSegEdit();

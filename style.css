@@ -412,6 +412,10 @@ output {
     padding: 6px 16px;
 }
 .seg button:hover,
+/* (the character sets: eight of them, on one row) */
+#charset button {
+    padding: 5px 9px;
+}
 .chooser button:hover {
     color: var(--text);
     background: rgba(255, 255, 255, 0.55);
@@ -655,6 +659,16 @@ output {
     font-family: var(--serif);
     font-size: 22px;
     font-weight: 600;
+}
+/* a prompt to write in cursive */
+#prompt-char.cursive,
+#s-target.cursive {
+    font-style: italic;
+}
+.s-cursive-row {
+    margin-left: 12px;
+    font-size: 13.5px;
+    color: var(--soft);
 }
 
 /* ------------------------------------------------------------------ library */

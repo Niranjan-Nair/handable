@@ -822,17 +822,32 @@ G['∰'] = multiInt(3, true);
 // right, at the line, or at the x-height after b, o, v and w. The strokes between
 // letters are drawn when they're written, from one letter's end into the next one's
 // start (see layout/cursive.js). Dots and crosses come after.
+//
+// They're made of the same pieces as the print letters wherever cursive and print
+// share them (stems, the arch of n, the bowl of a, the cup of u), so the writer's own
+// pieces stand in for them: a cursive n is built from the arches of their print n, h
+// and m, a loop comes down their own stem.
 const foot = (x) => curve([x, -0.08], [x + 0.01, -0.02], [x + 0.05, 0], [x + 0.1, -0.01]); // down stroke's turn
 const bowl = () => arc(0.18, -0.25, 0.18, 0.25, -50, -410); // a d g q: from the top right, anticlockwise
 const BOWL_END = [0.296, -0.442]; // where it starts and ends
-// a tall loop, from part way up its right side (the stroke into it is its upstroke),
-// over the top and down to the line at x
-const loop = (x) =>
-    curve([0.14, -0.55], [0.22, -0.8], [0.2, -0.98], [0.13, -1], [0.08, -0.85], [0.09, -0.4], [x, -0.08]);
-// an arch, from the foot of one down stroke at x0 to the next at x1
-const hump = (x0, x1) => curve([x0, -0.08], [x0 + 0.02, -0.3], [(x0 + x1) / 2, -0.48], [x1, -0.38], [x1, -0.08]);
-// the rise over into a first down stroke (n, m, v, x, y), ending at its foot at x
-const over = (x) => curve([0, -0.3], [0.04, -0.44], [0.1, -0.48], [x, -0.4], [x, -0.08]);
+// a tall loop: up its right side (the stroke into it is its upstroke), over the top,
+// and down its stem to the line at x
+const loop = (x) => [
+    ...curve([0.14, -0.55], [0.2, -0.78], [0.21, -0.95]),
+    ...arc(0.15, -0.95, 0.06, 0.05, 0, -180),
+    ...L([0.09, -0.95], [x, -0.08]),
+];
+// an arch, from the foot of one down stroke at x0 to the foot of the next at x0 + w:
+// back up the stem, over the print n's arch, and down
+const hump = (x0, w) => [...L([x0, -0.08], [x0, -0.3]), ...arch(x0, w), ...L([x0 + w, -0.3], [x0 + w, -0.08])];
+// the rise over into a first down stroke at x (n, m, x), down to its foot
+const over = (x) => [...curve([0, -0.3], [x * 0.45, -0.46], [x, -0.48]), ...L([x, -0.48], [x, -0.08])];
+// the cup of u (as the print u's), from its left stem at x0 to its right one
+const cup = (x0, w) => [
+    ...L([x0, -0.5], [x0, -0.2]),
+    ...arc(x0 + w / 2, -0.2, w / 2, 0.18, 180, 0),
+    ...L([x0 + w, -0.2], [x0 + w, -0.5]),
+];
 const cursiveDot = (x) => S(dot(x, -0.72));
 
 const C = {
@@ -885,20 +900,9 @@ const C = {
     ],
     f: [
         S(
-            curve(
-                [0.14, -0.55],
-                [0.22, -0.8],
-                [0.2, -0.98],
-                [0.13, -1],
-                [0.08, -0.85],
-                [0.09, -0.4],
-                [0.08, 0.15],
-                [0.04, 0.4],
-                [-0.03, 0.42],
-                [0, 0.24],
-                [0.14, 0.04],
-                [0.22, -0.02],
-            ),
+            loop(0.09),
+            L([0.09, -0.08], [0.08, 0.2]),
+            curve([0.08, 0.2], [0.05, 0.4], [-0.03, 0.42], [0, 0.24], [0.14, 0.04], [0.22, -0.02]),
         ),
     ],
     g: [
@@ -908,7 +912,7 @@ const C = {
             curve([0.36, 0.28], [0.3, 0.44], [0.16, 0.42], [0.18, 0.24], [0.34, 0.04], [0.42, -0.04]),
         ),
     ],
-    h: [S(loop(0.08), hump(0.08, 0.3), foot(0.3))],
+    h: [S(loop(0.08), hump(0.08, 0.24), foot(0.32))],
     i: [S(L([0.1, -0.5], [0.09, -0.08]), foot(0.09)), cursiveDot(0.12)],
     j: [
         S(
@@ -921,13 +925,13 @@ const C = {
         S(
             loop(0.08),
             curve([0.08, -0.08], [0.12, -0.3], [0.26, -0.46], [0.3, -0.34], [0.12, -0.24]),
-            curve([0.12, -0.24], [0.24, -0.14], [0.27, -0.08]),
+            L([0.12, -0.24], [0.27, -0.08]),
             foot(0.27),
         ),
     ],
     l: [S(loop(0.09), foot(0.09))],
-    m: [S(over(0.15), hump(0.15, 0.32), hump(0.32, 0.49), foot(0.49))],
-    n: [S(over(0.15), hump(0.15, 0.33), foot(0.33))],
+    m: [S(over(0.12), hump(0.12, 0.18), hump(0.3, 0.18), foot(0.48))],
+    n: [S(over(0.12), hump(0.12, 0.2), foot(0.32))],
     o: [S(arc(0.16, -0.25, 0.16, 0.25, -50, -410), curve([0.263, -0.442], [0.3, -0.5], [0.38, -0.46], [0.44, -0.46]))],
     p: [
         S(
@@ -952,32 +956,21 @@ const C = {
         ),
     ],
     t: [S(L([0.12, -0.82], [0.11, -0.08]), foot(0.11)), S(L([0, -0.5], [0.26, -0.52]))],
-    u: [
-        S(
-            curve([0.06, -0.5], [0.06, -0.15], [0.14, -0.02], [0.26, -0.15], [0.28, -0.5]),
-            L([0.28, -0.5], [0.28, -0.08]),
-            foot(0.28),
-        ),
-    ],
+    u: [S(cup(0.06, 0.22), L([0.28, -0.5], [0.28, -0.08]), foot(0.28))],
     v: [
         S(
-            curve([0, -0.3], [0.04, -0.44], [0.1, -0.48], [0.13, -0.3], [0.2, -0.02]),
-            curve([0.2, -0.02], [0.28, -0.3], [0.31, -0.5], [0.28, -0.44]),
-            curve([0.28, -0.44], [0.34, -0.46], [0.4, -0.46]),
+            curve([0, -0.3], [0.05, -0.46], [0.1, -0.48]),
+            L([0.1, -0.48], [0.2, -0.02], [0.3, -0.48]),
+            curve([0.3, -0.48], [0.32, -0.44], [0.4, -0.46]),
         ),
     ],
-    w: [
-        S(
-            curve([0.06, -0.5], [0.06, -0.15], [0.12, -0.02], [0.2, -0.15], [0.22, -0.4]),
-            curve([0.22, -0.4], [0.24, -0.12], [0.32, -0.02], [0.4, -0.2], [0.42, -0.5]),
-            curve([0.42, -0.5], [0.4, -0.42], [0.48, -0.44], [0.54, -0.46]),
-        ),
-    ],
-    x: [S(over(0.2), foot(0.2)), S(L([0.28, -0.48], [0.06, 0]))],
+    w: [S(cup(0.06, 0.16), cup(0.22, 0.16), curve([0.38, -0.5], [0.4, -0.44], [0.48, -0.46]))],
+    x: [S(over(0.18), foot(0.18)), S(L([0.28, -0.48], [0.06, 0]))],
     y: [
         S(
-            curve([0, -0.3], [0.04, -0.44], [0.1, -0.48], [0.13, -0.3], [0.2, -0.02], [0.27, -0.3], [0.29, -0.5]),
-            L([0.29, -0.5], [0.27, 0.3]),
+            curve([0, -0.3], [0.05, -0.46], [0.1, -0.48]),
+            cup(0.1, 0.18),
+            L([0.28, -0.5], [0.27, 0.3]),
             curve([0.27, 0.3], [0.21, 0.44], [0.11, 0.42], [0.13, 0.25], [0.29, 0.05], [0.37, -0.03]),
         ),
     ],

@@ -158,7 +158,8 @@
                                     <button type="button" data-val="punct">Punctuation</button>
                                     <button type="button" data-val="accents">Accents</button>
                                     <button type="button" data-val="cyrillic">а to я</button>
-                                    <button type="button" data-val="all">Everything</button>
+                                    <button type="button" data-val="cursive">Cursive</button>
+                                    <button type="button" data-val="all">All</button>
                                 </div>
                                 <label class="inline-field"
                                     >Other <input id="custom-char" maxlength="2" size="3" placeholder="é"
@@ -171,6 +172,11 @@
                                 it. Keep the baseline on the solid line. Lowercase letters should reach the dashed line.
                                 Accented letters are made from your plain letters and accents, so write them only if you
                                 write one differently.
+                            </p>
+                            <p class="hint" id="cursive-hint" hidden>
+                                Write each letter as you would in the middle of a word: with the stroke up into it,
+                                ending where you'd go on to the next letter. Italic text is written with your cursive
+                                letters, and the ones you haven't written are made from your other writing.
                             </p>
                         </div>
                     </div>
@@ -204,6 +210,9 @@
                     <p class="write-this">
                         <span class="muted">Write this</span> <span id="s-target"></span>
                         <button type="button" id="s-another" class="link">Another sentence</button>
+                        <label class="inline s-cursive-row"
+                            ><input id="s-cursive" type="checkbox" /> Written in cursive</label
+                        >
                     </p>
                     <input type="hidden" id="s-text" />
                     <canvas id="sentence-pad" class="pad wide"></canvas>

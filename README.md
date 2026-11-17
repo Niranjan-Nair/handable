@@ -21,7 +21,10 @@ A stylus or touchscreen works best; a mouse is fine.
 
 1. **Train → Single characters.** Write each character 3–5 times. If you write a character in more
    than one way (a looped and a straight `y`, say), write each form a few times, in roughly the
-   proportion you use it.
+   proportion you use it. The **Cursive** set is for italic text: write each lowercase
+   letter in cursive, as you would in the middle of a word. In **Sentences**, tick **Written in
+   cursive** to train cursive from whole words instead (its letters are cut out of the joined
+   writing and read as cursive).
 2. **Train → Sentences** (recommended). Write a short sentence on one line. This is how the app
    learns your letter and word spacing, and which forms you use at the start, middle and end of a
    word. The pad shrinks its guides so the sentence fits, measuring with your own model how wide
@@ -257,20 +260,28 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
     written as `<align center>…</align>` or `<align right>…</align>` around a paragraph's text.
     Lines are centered or pushed right within the room they have (after an indent, within a
     text box's width); without paper, the page takes the full width to align in.
-  - **Italic is cursive:** italic text (`<i>…</i>`, ⌘I) is written in running hand. Its
-    lowercase letters have cursive forms (`basefont.js`): looped b, f, h, k and l, descender
-    loops on g, j, y and z, the cursive r and s. They're built from your own strokes where
-    they match, like a letter you haven't trained, and slanted. Each letter is its body
-    alone: it starts where the pen comes into it (the top of i or u, part way up a loop, the
-    rise into n or e, the top of a's bowl) and ends on a turn heading right. The strokes
-    between letters are drawn as the word is written (`layout/cursive.js`): on the way the
-    last letter was going, and into the next one the way it begins (smoothly up into a loop
-    or the rise into n, or up to a point where the pen turns down, as in i, u and r), a
-    little different each time, with no pen lift. After a letter that leaves high (b, o, v,
-    w) the next is entered at that height, as in "on". A word starts with a short lead-in and
-    ends with a short exit. Dots, t-crosses and accents come afterwards and are never joined.
-    Capitals, digits and punctuation stay printed. It's a quick way to make cursive pages,
-    for testing how cursive is read.
+  - **Italic is cursive:** italic text (`<i>…</i>`, ⌘I) is written in running hand.
+    - **Your cursive letters** (Train → Cursive, or a sentence written in cursive) are used
+      wherever you have them. They're kept apart from your print, and each is kept as you
+      write it in a word: with your way into it, down to its last turn at the line (the way on
+      out of it is the join, drawn when it's written).
+    - **The others are made from your writing:** cursive forms (`basefont.js`, with looped b, f,
+      h, k and l, descender loops on g, j, y and z, and the cursive r and s) built from the same
+      pieces as the print letters wherever cursive and print share them: stems, the arch of n,
+      the bowl of a, the cup of u. So your own pieces stand in for them: a cursive n is made of
+      the arches of your print n, h and m, and a loop comes down your own stem. About half of
+      each letter is your strokes even before you've written any cursive; the rest is shaped to
+      your heights, widths and slant.
+    - **Joined at their connection points** (`layout/cursive.js`): each letter starts where the
+      pen comes into it (the top of i or u, part way up a loop, the rise into n or e, the top
+      of a's bowl) and ends on a turn heading right. The strokes between letters are drawn as
+      the word is written: on the way the last letter was going, and into the next the way it
+      begins (smoothly up into a loop or the rise into n, or up to a point where the pen turns
+      down, as in i, u and r), a little different each time, with no pen lift. After a letter
+      that leaves high (b, o, v, w) the next is entered at that height, as in "on". A word
+      starts with a short lead-in (unless it's one of your own letters, which have yours) and
+      ends with a short exit. Dots, t-crosses and accents come afterwards and are never
+      joined. Capitals, digits and punctuation stay printed.
   - **Shortcuts:** ⌘I italic, ⌘U underline, ⌘. superscript, ⌘, subscript, ⌘⇧X strikethrough, ⌘⇧H highlight,
     ⌘⇧L and ⌘⇧E align left and center (Ctrl on Windows and Linux). Right alignment has no
     shortcut: ⌘⇧R is the browser's hard reload, which mustn't change the text.

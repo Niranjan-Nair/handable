@@ -218,37 +218,9 @@ const LOOKALIKE = {
     '“': '"',
 };
 
-// A letter in cursive (extra.cursive): its cursive form, built from the writer's own
-// strokes where they match it, like an untrained letter. Its first stroke is the one
-// that joins (see layout/cursive.js). -> a glyph, or null if it has no cursive form
-function cursiveGlyph(model, ch, rng, o, extra) {
-    const plan = inferPlan(model, ch, true);
-    if (!plan) return null;
-
-    return Object.assign(synthInferred(model, plan, rng, o, extra), { inferred: false, cursive: true });
-}
-
-// Synthesize one new instance of `ch`. Returns null if the character is unknown
-// (not trained, and inference is off or there is no base skeleton for it).
-export function synthGlyph(model, ch, ctx, rng, o, extra = {}) {
-    const cursive = extra.cursive && cursiveGlyph(model, ch, rng, o, extra);
-    if (cursive) return cursive;
-
-    const like = LOOKALIKE[ch];
-    if (like && !model.chars[ch] && (model.chars[like] || !baseGlyph(ch))) ch = like;
-    const entry = model.chars[ch] || (model.units && model.units[ch]);
-
-    if (!entry) {
-        // a letter made of parts (é = e + ´): the letter is written in its place in the word
-        const write = (part) => synthGlyph(model, part, ctx, rng, o, /\p{L}/u.test(part) ? extra : {});
-        const composed = composeGlyph(ch, { write, rng, o, X: model.style.zones.X });
-        if (composed) return composed;
-
-        const plan = o.infer !== false ? inferPlan(model, ch) : null;
-
-        return plan ? synthInferred(model, plan, rng, o, extra) : null;
-    }
-
+// A new instance of a trained character (entry: its variants), morphed between its
+// samples
+function synthTrained(entry, ch, ctx, rng, o, extra) {
     const f = clamp(+o.formality || 0, 0, 1);
 
     const v =
@@ -312,9 +284,49 @@ export function synthGlyph(model, ch, ctx, rng, o, extra = {}) {
     return finishGlyph(ch, strokes, { variant: v });
 }
 
+// A letter in cursive (extra.cursive): the writer's own cursive letter where they've
+// trained it (ownEntry: with the stroke into it, as they write it), or else its
+// cursive form built from their strokes where they match it, like an untrained
+// letter. Its first stroke is the one that joins (see layout/cursive.js). -> a glyph,
+// or null if it has no cursive form
+function cursiveGlyph(model, ch, ctx, rng, o, extra) {
+    const own = model.cursive && model.cursive[ch];
+    if (own) return Object.assign(synthTrained(own, ch, ctx, rng, o, extra), { cursive: true, ownEntry: true });
+
+    const plan = inferPlan(model, ch, true);
+    if (!plan) return null;
+
+    return Object.assign(synthInferred(model, plan, rng, o, extra), { inferred: false, cursive: true });
+}
+
+// Synthesize one new instance of `ch`. Returns null if the character is unknown
+// (not trained, and inference is off or there is no base skeleton for it).
+export function synthGlyph(model, ch, ctx, rng, o, extra = {}) {
+    const cursive = extra.cursive && cursiveGlyph(model, ch, ctx, rng, o, extra);
+    if (cursive) return cursive;
+
+    const like = LOOKALIKE[ch];
+    if (like && !model.chars[ch] && (model.chars[like] || !baseGlyph(ch))) ch = like;
+    const entry = model.chars[ch] || (model.units && model.units[ch]);
+
+    if (!entry) {
+        // a letter made of parts (é = e + ´): the letter is written in its place in the word
+        const write = (part) => synthGlyph(model, part, ctx, rng, o, /\p{L}/u.test(part) ? extra : {});
+        const composed = composeGlyph(ch, { write, rng, o, X: model.style.zones.X });
+        if (composed) return composed;
+
+        const plan = o.infer !== false ? inferPlan(model, ch) : null;
+
+        return plan ? synthInferred(model, plan, rng, o, extra) : null;
+    }
+
+    return synthTrained(entry, ch, ctx, rng, o, extra);
+}
+
+// one instance of ch, on its own (opts: generate()'s options, and ctx, and cursive)
 export function sampleGlyph(model, ch, opts) {
     const o = Object.assign({}, DEFAULTS, opts || {});
     o.shearDelta = 0;
 
-    return synthGlyph(model, ch, opts && opts.ctx ? opts.ctx : 'solo', makeRng(o.seed), o);
+    return synthGlyph(model, ch, opts && opts.ctx ? opts.ctx : 'solo', makeRng(o.seed), o, { cursive: !!o.cursive });
 }

@@ -114,12 +114,26 @@ $('#s-another').onclick = () => setPrompt((settings.prompt || 0) + 1);
 
 const targetLabels = () => Array.from($('#s-text').value.replace(/\s+/g, ''));
 
+// is the sentence written in cursive? (its letters train italic, not print)
+const cursiveLine = () => ui.trainMode === 'sentences' && $('#s-cursive').checked;
+
+$('#s-cursive').addEventListener('change', () => {
+    settings.cursiveSentences = $('#s-cursive').checked;
+    saveSettings();
+    $('#s-target').classList.toggle('cursive', cursiveLine());
+    exitSegEdit();
+});
+
+$('#s-cursive').checked = !!settings.cursiveSentences;
+
 // Read the pad: find each letter of the text in the ink, or (after the boxes
 // were fixed by hand) just work out which letter each box is.
 function readPad(fixed) {
     const text = $('#s-text').value;
     const m = getModel();
-    const r = fixed ? HW.labelGroups(segGroups, text, m) : HW.readLine(sentencePad.strokes, text, m);
+    // (in cursive, its letters are looked for as cursive letters)
+    const opts = { cursive: cursiveLine() };
+    const r = fixed ? HW.labelGroups(segGroups, text, m, opts) : HW.readLine(sentencePad.strokes, text, m, opts);
     segGroups = r.groups;
     segMissing = r.missing.map((j) => r.labels[j].ch);
 }
@@ -301,6 +315,11 @@ export function saveSentence() {
         status('Nothing was clear enough to save. Fix the boxes, or clear it and write it again.', 4500);
 
         return;
+    }
+
+    if (cursiveLine()) {
+        for (const s of samples) s.cursive = true;
+        stats.cursive = true; // (cursive spacing isn't print spacing)
     }
 
     data.samples.push(...samples);

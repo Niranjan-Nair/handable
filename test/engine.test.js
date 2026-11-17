@@ -144,6 +144,46 @@ test('italic is cursive: the pen runs on from each letter into the next', () => 
     assert.equal(res.caretMap.chars.length, 12, 'every letter still has its place');
 });
 
+test("cursive you've trained is used for italic, and leaves print alone", () => {
+    const ds = makeDataset(glyphs);
+    // an l written alone in cursive: up into its loop, down, and off on an exit
+    const path = [
+        [0, 0],
+        [0.26, -0.6],
+        [0.3, -0.95],
+        [0.18, -1],
+        [0.12, -0.6],
+        [0.13, -0.02],
+        [0.2, 0],
+        [0.32, -0.14],
+    ];
+    const stroke = [];
+    for (let i = 0; i < path.length - 1; i++)
+        for (let k = 0; k < 6; k++) {
+            const t = k / 6;
+            stroke.push([
+                path[i][0] + (path[i + 1][0] - path[i][0]) * t,
+                path[i][1] + (path[i + 1][1] - path[i][1]) * t,
+                0,
+                null,
+            ]);
+        }
+    stroke.push([0.32, -0.14, 0, null]);
+    for (let n = 0; n < 3; n++)
+        ds.samples.push({ id: 'cl' + n, char: 'l', ctx: 'solo', cursive: true, strokes: [stroke] });
+    const m = HW.buildModel(ds);
+    assert.equal(m.cursive.l.count, 3);
+    assert.equal(m.chars.l.count, model.chars.l.count, 'not a print l');
+    const g = HW.sampleGlyph(m, 'l', { cursive: true, seed: 1, randomness: 0 });
+    assert.ok(g.cursive && g.ownEntry, 'their own cursive l');
+    assert.ok(g.strokes[0].at(-1).y > -0.06, 'kept down to its turn at the line: the exit is the join');
+    assert.equal(
+        HW.generate(m, 'lull', { seed: 1 }).svg,
+        HW.generate(model, 'lull', { seed: 1 }).svg,
+        'print as before',
+    );
+});
+
 test('Cyrillic is written too', () => {
     assert.deepEqual(HW.generate(model, 'Съешь же ещё этих мягких булок', { seed: 1 }).missing, []);
 });

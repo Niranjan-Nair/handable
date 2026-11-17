@@ -184,19 +184,19 @@ const polyLen = (raw) => {
 
 // what a character should look like: the writer's own forms where they've
 // trained it (the most common variants), otherwise the form the app would
-// draw for it
-function recTemplates(model, ch, cache) {
+// draw for it (cursive: in cursive)
+function recTemplates(model, ch, cache, cursive) {
     if (cache.has(ch)) return cache.get(ch);
 
     const glyphs = [];
-    const entry = model.chars[ch];
+    const entry = (cursive ? model.cursive : model.chars)[ch];
 
     if (entry) for (const v of entry.variants.slice(0, 3)) glyphs.push(v.medoid);
     else {
         let g = null;
 
         try {
-            g = sampleGlyph(model, ch, { randomness: 0, seed: 'read', formality: 1 });
+            g = sampleGlyph(model, ch, { randomness: 0, seed: 'read', formality: 1, cursive });
         } catch {
             g = null;
         }
@@ -290,12 +290,12 @@ function cloudDist(A, B, bx, s) {
 // from a few units, skips a letter or a whole word, or leaves a unit as stray ink,
 // whichever costs least. span: the most units one letter may take; trust: the
 // units were cut by hand. -> { groups, labels, missing (label indices), scale }
-function alignInk(units, text, model, span, trust) {
+function alignInk(units, text, model, span, trust, cursive) {
     const labels = textLabels(text);
     if (!units.length) return { groups: [], labels, missing: labels.map((_, j) => j) };
 
     const cache = new Map();
-    const tmpl = labels.map((l) => recTemplates(model, l.ch, cache));
+    const tmpl = labels.map((l) => recTemplates(model, l.ch, cache, cursive));
     const fit = fitToModel(units, tmpl);
     const ink = { units, labels, tmpl, model, ...fit, style: model.style || {} };
     const cuts = cutCosts(ink);
@@ -627,8 +627,9 @@ function joinParts(parts) {
     return out.sort((a, b) => (a[0][2] || 0) - (b[0][2] || 0));
 }
 
-// Read a freshly written line: cut it into pieces and line them up with the text.
-export function readLine(strokes, text, model) {
+// Read a freshly written line: cut it into pieces and line them up with the text
+// (opts.cursive: it's written in cursive).
+export function readLine(strokes, text, model, opts = {}) {
     const raw = strokes.filter((s) => s && s.length);
     const units = [];
 
@@ -664,11 +665,11 @@ export function readLine(strokes, text, model) {
 
     units.sort((a, b) => a.cx - b.cx);
 
-    return alignInk(units, text, model, 14);
+    return alignInk(units, text, model, 14, false, !!opts.cursive);
 }
 
 // Label letters that are already cut (after the writer fixed the boxes by hand).
-export function labelGroups(groups, text, model) {
+export function labelGroups(groups, text, model, opts = {}) {
     const all = [];
     groups.forEach((g) => g.strokes.forEach((s) => all.push(s)));
     const ids = strokeOrigins(all);
@@ -677,5 +678,5 @@ export function labelGroups(groups, text, model) {
     const units = groups.map((g) => makeUnit(g.strokes.map((s) => ({ raw: s, origin: ids[n], seq: n++ }))));
     units.sort((a, b) => a.cx - b.cx);
 
-    return alignInk(units, text, model, 1, true);
+    return alignInk(units, text, model, 1, true, !!opts.cursive);
 }

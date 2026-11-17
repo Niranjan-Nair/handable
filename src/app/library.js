@@ -5,7 +5,7 @@ import { $, download, esc, status } from './dom.js';
 import { data, getModel, invalidateModel, persist, resetData, saveSettings, settings, uid } from './store.js';
 import { chip } from './train/letters.js';
 
-let libChar = null; // what's picked: a character, a ligature, or 'mark:strike' / 'mark:box'
+let libChar = null; // what's picked: a character, a ligature, 'cursive:a', or 'mark:strike' / 'mark:box'
 
 export function renderLibrary() {
     const m = getModel();
@@ -19,6 +19,7 @@ export function renderLibrary() {
               .map((c) => chip(c, m.chars[c].count, c === libChar ? 'sel' : '', null, m.chars[c].variants.length))
               .join('') +
           inferredChips(inferable) +
+          cursiveChips(m) +
           comboChips(m) +
           markChips()
         : '<p class="muted">No samples yet.</p>';
@@ -66,6 +67,23 @@ function inferredChips(inferable) {
     );
 }
 
+function cursiveChips(m) {
+    const cs = Object.keys(m.cursive).sort();
+    if (!cs.length) return note('No cursive letters yet. Write some under Train, in Cursive, for italic text.');
+
+    return (
+        note('Your cursive letters, for italic text') +
+        cs
+            .map((c) => {
+                const key = 'cursive:' + c;
+                const sel = key === libChar ? ' sel' : '';
+
+                return chip(key, m.cursive[c].count, 'cursive' + sel, null, m.cursive[c].variants.length, c);
+            })
+            .join('')
+    );
+}
+
 function comboChips(m) {
     const combos = HW.linkStats(m).combos.filter((c) => c.c > 0);
     if (!combos.length) return note('No joined letters yet. Write some under Train, in Joined letters.');
@@ -96,7 +114,7 @@ function markChips() {
 }
 
 // a dozen freshly written copies of ch
-function synthRow(m, ch) {
+function synthRow(m, ch, cursive = false) {
     const gs = settings.gen;
     let row = '';
 
@@ -107,6 +125,7 @@ function synthRow(m, ch) {
             smoothness: gs.smoothness,
             penConsistency: gs.penConsistency,
             formality: gs.formality,
+            cursive,
         });
 
         if (g) row += `<div class="thumb synth">${HW.glyphSVG(g, { box: 64, guides: true })}</div>`;
@@ -144,6 +163,8 @@ function renderDetail() {
     if (libChar && libChar.startsWith('mark:')) el.innerHTML = markDetail(m, libChar.slice(5));
     else if (libChar && m.units[libChar]) el.innerHTML = unitDetail(m, libChar);
     else if (libChar && m.chars[libChar]) el.innerHTML = charDetail(m, libChar);
+    else if (libChar && libChar.startsWith('cursive:') && m.cursive[libChar.slice(8)])
+        el.innerHTML = charDetail(m, libChar.slice(8), true);
     else {
         const info = libChar && data.samples.length ? HW.inferInfo(m, libChar) : null;
 
@@ -237,14 +258,15 @@ function inferredDetail(m, ch, info) {
 }
 
 // a trained character: its forms (variants) and their samples
-function charDetail(m, ch) {
-    const entry = m.chars[ch];
+// a character's forms and samples (cursive: its cursive ones)
+function charDetail(m, ch, cursive = false) {
+    const entry = (cursive ? m.cursive : m.chars)[ch];
     const n = entry.variants.length;
 
     let html =
         `<div class="row">${detailTitle(ch)}
-    <span class="muted">${entry.count} samples in ${n} form${n > 1 ? 's' : ''}</span></div>` +
-        attemptsRow(synthRow(m, ch), `At randomness ${settings.gen.randomness}. `);
+    <span class="muted">${cursive ? 'In cursive. ' : ''}${entry.count} samples in ${n} form${n > 1 ? 's' : ''}</span></div>` +
+        attemptsRow(synthRow(m, ch, cursive), `At randomness ${settings.gen.randomness}. `);
 
     entry.variants.forEach((v, i) => {
         const pct = Math.round((v.weight / entry.count) * 100);

@@ -10,11 +10,15 @@ import { clamp, median } from '../util.js';
 
 // The model of a writer's hand, from their training data (see the README):
 // { chars, units (ligatures), links (how often they join letters), style, marks,
-// parts (pieces of letters, for inferring untrained ones), … }
+// parts (pieces of letters, for inferring untrained ones), cursive (their cursive
+// letters), … }. Cursive samples (cursive: true) are kept apart: the style (heights,
+// slant, widths, spacing) and joined letters are learned from print.
 export function buildModel(dataset, opts = {}) {
     const threshold = opts.variantThreshold != null ? opts.variantThreshold : DEFAULTS.variantThreshold;
     const sizeConsistency = opts.sizeConsistency != null ? +opts.sizeConsistency : DEFAULTS.sizeConsistency;
-    const samples = (dataset && dataset.samples) || [];
+    const all = (dataset && dataset.samples) || [];
+    const samples = all.filter((s) => s && !s.cursive);
+    const byCursive = cursiveSamples(all.filter((s) => s && s.cursive));
     const seq = analyzeSequences(samples, new Set((dataset && dataset.excludedUnits) || []));
     const byChar = letterSamples(samples, seq);
     const byUnit = {};
@@ -31,15 +35,28 @@ export function buildModel(dataset, opts = {}) {
     if (sizeConsistency > 0) {
         normalizeSizes(byChar, style, clamp(sizeConsistency, 0, 1));
         normalizeSizes(byUnit, style, clamp(sizeConsistency, 0, 1));
+        normalizeSizes(byCursive, style, clamp(sizeConsistency, 0, 1));
     }
 
     const spreads = [];
     const chars = variantEntries(byChar, threshold, style, spreads);
     const units = variantEntries(byUnit, threshold, style, spreads);
-    Object.assign(style, learnSpacing(byChar, (dataset && dataset.sentences) || [], style));
+    const cursive = variantEntries(byCursive, threshold, style, []);
+    const sentences = ((dataset && dataset.sentences) || []).filter((s) => !s.cursive);
+    Object.assign(style, learnSpacing(byChar, sentences, style));
     style.spreadFactor = spreads.length ? median(spreads) : 1;
 
-    const model = { chars, units, links: seq.links, style, threshold, sizeConsistency, parts: [], inferCache: {} };
+    const model = {
+        chars,
+        units,
+        cursive,
+        links: seq.links,
+        style,
+        threshold,
+        sizeConsistency,
+        parts: [],
+        inferCache: {},
+    };
     model.marks = prepareMarks((dataset && dataset.marks) || []);
     model.parts = buildParts(model);
 
@@ -70,6 +87,46 @@ function letterSamples(samples, seq) {
     }
 
     return byChar;
+}
+
+// The writer's cursive letters, prepared, by character. Each is kept as it's written
+// in a word: with the stroke into it, but only down to the last turn at the line,
+// where a short stroke out of it ends (the way on out is the join into the next
+// letter, drawn when it's written).
+function cursiveSamples(samples) {
+    const byChar = {};
+
+    for (const s of samples) {
+        if (!s.char || !s.strokes || !s.strokes.length) continue;
+
+        const g = prepareSample({ ...s, strokes: [withoutExit(s.strokes[0]), ...s.strokes.slice(1)] });
+        if (g) (byChar[s.char] = byChar[s.char] || []).push(g);
+    }
+
+    return byChar;
+}
+
+// a cursive letter's first stroke without its exit: cut at its last low point near the
+// line, when what comes after is a short stroke out to the right (not o's tie, not g's
+// loop back up); raw points are [x, y, …] in units, y down
+function withoutExit(st) {
+    if (!st || st.length < 8) return st;
+
+    let low = -1;
+    for (let i = Math.floor(st.length * 0.5); i < st.length; i++) if (low < 0 || st[i][1] >= st[low][1]) low = i;
+
+    const len = (a, b) => {
+        let d = 0;
+        for (let i = a + 1; i <= b; i++) d += Math.hypot(st[i][0] - st[i - 1][0], st[i][1] - st[i - 1][1]);
+
+        return d;
+    };
+
+    const nearLine = Math.abs(st[low][1]) < 0.12;
+    const shortExit = len(low, st.length - 1) < 0.3 * len(0, st.length - 1);
+    const outRight = st.at(-1)[0] > st[low][0];
+
+    return nearLine && shortExit && outRight && st.length - low > 2 ? st.slice(0, low + 2) : st;
 }
 
 // the writer's letter shapes: zones (heights), slant and widths

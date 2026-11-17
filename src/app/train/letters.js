@@ -12,26 +12,33 @@ const CHARSETS = {
     // them is only needed when you write one differently
     accents: '´`ˆ¨˜¸éèêëàâäçñöôüûùíîïøßæœ¿¡',
     cyrillic: 'абвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ',
+    // written in cursive (as in a word), for italic text
+    cursive: 'abcdefghijklmnopqrstuvwxyz',
 };
 
 CHARSETS.all = CHARSETS.lower + CHARSETS.upper + CHARSETS.digits + CHARSETS.punct;
+
+// is the set being trained the cursive one?
+const cursive = () => settings.charset === 'cursive';
 
 export const letterPad = new Pad($('#letter-pad'), { width: 340, height: 340, unit: 130, baseline: 228, originX: 0 });
 
 let curChar = CHARSETS[settings.charset][0];
 
+// samples per character, in the set's kind of writing (print or cursive)
 function counts() {
     const c = {};
-    for (const s of data.samples) c[s.char] = (c[s.char] || 0) + 1;
+    for (const s of data.samples) if (!!s.cursive === cursive()) c[s.char] = (c[s.char] || 0) + 1;
 
     return c;
 }
 
-export function chip(ch, n, extraClass, sub, forms) {
+// a character's button (label: what it shows, if not the character)
+export function chip(ch, n, extraClass, sub, forms, label = ch) {
     const cls = ['chip', n ? (n >= 3 ? 'ok' : '') : 'zero', extraClass || ''].join(' ');
     const title = `${n} sample${n === 1 ? '' : 's'}` + (forms > 1 ? ` in ${forms} forms` : '');
 
-    return `<button class="${cls}" data-ch="${esc(ch)}" title="${title}">${esc(ch)}<span class="n">${sub != null ? sub : n}</span></button>`;
+    return `<button class="${cls}" data-ch="${esc(ch)}" title="${title}">${esc(label)}<span class="n">${sub != null ? sub : n}</span></button>`;
 }
 
 export function renderLetterGrid() {
@@ -43,6 +50,8 @@ export function renderLetterGrid() {
 
     const n = c[curChar] || 0;
     $('#prompt-char').textContent = curChar;
+    $('#prompt-char').classList.toggle('cursive', cursive());
+    $('#cursive-hint').hidden = !cursive();
     $('#prompt-count').textContent = `${n} sample${n === 1 ? '' : 's'}`;
 }
 
@@ -71,6 +80,7 @@ export function saveLetter(next) {
         char: curChar,
         ctx: 'solo',
         source: 'letter',
+        ...(cursive() && { cursive: true }),
         strokes: letterPad.strokes,
         created: Date.now(),
     });
@@ -78,7 +88,7 @@ export function saveLetter(next) {
     letterPad.strokes = [];
     letterPad.t0 = null;
     letterPad.draw();
-    status(`Saved “${curChar}”`);
+    status(`Saved “${curChar}”${cursive() ? ' in cursive' : ''}`);
     persist();
     if (next) stepChar(1);
 }
