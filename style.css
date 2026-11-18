@@ -412,13 +412,13 @@ output {
     padding: 6px 16px;
 }
 .seg button:hover,
-/* (the character sets: eight of them, on one row) */
-#charset button {
-    padding: 5px 9px;
-}
 .chooser button:hover {
     color: var(--text);
     background: rgba(255, 255, 255, 0.55);
+}
+/* (the character sets: eight of them, on one row) */
+#charset button {
+    padding: 5px 9px;
 }
 .seg button.on,
 .chooser button.on {
