@@ -48,14 +48,14 @@ function penWay(E, S, k, jit) {
     const a = E.p;
     const b = S.p;
     const d = Math.hypot(b.x - a.x, b.y - a.y);
-    const c1 = { x: a.x + E.dir.x * d * 0.35 * jit(), y: a.y + E.dir.y * d * 0.35 * jit() };
+    const c1 = { x: a.x + E.dir.x * d * 0.25 * jit(), y: a.y + E.dir.y * d * 0.25 * jit() };
     let c2;
 
     // up from below into a bowl that sets off back to the left (o, a, d, g, q): up its
     // left side and over the top into where it starts, not across the middle of it
     if (S.corner && b.y < a.y - 0.1 * k) c2 = { x: b.x + (S.corner.x - b.x) * jit(), y: S.corner.y };
-    // smoothly on into a stroke that sets off upwards (a loop, the rise into n or e)
-    else if (S.dir.y < -0.25) c2 = { x: b.x - S.dir.x * d * 0.35 * jit(), y: b.y - S.dir.y * d * 0.35 * jit() };
+    // smoothly on into a stroke that sets off upwards (a tall letter, the rise into n or e)
+    else if (S.dir.y < -0.25) c2 = { x: b.x - S.dir.x * d * 0.25 * jit(), y: b.y - S.dir.y * d * 0.25 * jit() };
     // across into a start no higher than the exit (after o or w, at the x-height)
     else if (b.y > a.y - 0.1 * k) c2 = { x: b.x - 0.35 * d * jit(), y: b.y };
     // or up to a point, where the pen turns (i, u, r, the top of a)
@@ -77,19 +77,23 @@ function penWay(E, S, k, jit) {
 
 const jitter = (rng, r) => () => 1 + rng.normal() * 0.12 * Math.min(r, 1.5);
 
-// After a letter that leaves high (b, o, v, w), the next letter is entered where its
-// first stroke rises to the exit: the part of its rise still below is left out (so "on"
-// doesn't dip to the line and climb back up into the n). Into a tall loop (h, l, b, k,
-// f), a little above the exit, so the join sweeps up into the loop rather than meeting
-// it where it crosses the stem and turning sharply up. Not e, whose rise makes its loop.
-function enterHigh(b, into, exitY) {
-    const level = (exitY - b.y) / b.s;
-    if (level > -0.3 || b.g.char === 'e') return;
+// Where the join meets the next letter: the start of its first stroke left out up to
+// there. Into a tall letter (h, l, b, k, f), the join runs straight up most of the way
+// and meets its rise a little below the top, so the join and the down stroke make the
+// ascender, as "th" and "wh" are written, rather than meeting a loop part way up. After
+// a letter that leaves high (b, o, v, w), a letter that starts by rising (n, m, v, y …)
+// is met at that height, so "on" doesn't dip to the line and climb back up into the n.
+// Not e, whose rise makes its loop.
+function enterAt(b, into, exitY) {
+    if (b.g.char === 'e') return;
 
     let top = 0; // the top of the stroke's first rise
     while (top < into.length - 3 && into[top + 1].y <= into[top].y) top++;
-    const enter = into[top].y < level - 0.3 ? level - 0.15 : level + 0.06;
+    const level = (exitY - b.y) / b.s;
+    const tall = into[top].y < -0.75;
+    if (!tall && level > -0.3) return;
 
+    const enter = tall ? into[top].y + 0.15 : level + 0.06;
     let k = 0;
     while (k < top && into[k].y > enter) k++;
     if (k > 0) into.splice(0, k);
@@ -108,7 +112,7 @@ export function joinLetters(a, b, rng, r) {
     const out = a.g.strokes[0];
     const into = b.g.strokes[0];
     const E = exitOf(a);
-    enterHigh(b, into, E.p.y);
+    enterAt(b, into, E.p.y);
     const way = penWay(E, entryOf(b), a.s, jitter(rng, r));
     out.push(...way.slice(1).map((p) => toItem(a, p)));
     out.joinedEnd = true;

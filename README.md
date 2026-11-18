@@ -284,9 +284,10 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
       begins (smoothly up into a loop or the rise into n, or up to a point where the pen turns
       down, as in i, u and r), a little different each time, with no pen lift. Into a bowl
       that sets off back to the left (o, a, d, g, q) the join rises along the bowl's left side
-      and over its top, as the pen does, rather than across its middle. After a letter that
-      leaves high (b, o, v, w) the next is entered at that height, as in "on", or into a tall
-      loop a little above it, so "wh" sweeps up into the h. A word starts with a short lead-in
+      and over its top, as the pen does, rather than across its middle. Into a tall letter
+      (h, l, b, k, f) the join runs straight up and meets it a little below its top, so the join
+      and the down stroke make the ascender, as in "th" and "wh". After a letter that leaves
+      high (b, o, v, w) a letter that starts by rising is entered at that height, as in "on". A word starts with a short lead-in
       (except o, a, d, g and q, which start at their top) and ends with a short exit. Dots, t-crosses and accents come
       afterwards and are never joined.
     - **Capitals** have cursive forms too. Those that end on a turn at the line (A, C, E, G, H,
