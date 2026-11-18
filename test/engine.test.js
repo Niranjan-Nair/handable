@@ -121,8 +121,8 @@ test('italic is cursive: the pen runs on from each letter into the next', () => 
         { x: x1, y: y1, w: 1 },
     ];
     // two cursive letters side by side, each joining by its first stroke; their dots come after
-    const letter = (x) => ({
-        g: { cursive: true, strokes: [line(0.1, -0.5, 0.1, 0), line(0.1, -0.7, 0.11, -0.7)] },
+    const letter = (x, char = 'i') => ({
+        g: { char, cursive: true, strokes: [line(0.1, -0.5, 0.1, 0), line(0.1, -0.7, 0.11, -0.7)] },
         x,
         y: 0,
         s: 1,
@@ -138,10 +138,15 @@ test('italic is cursive: the pen runs on from each letter into the next', () => 
         !joinLetters(b, { g: { strokes: [line(0, 0, 0.1, 0)] }, x: 1, y: 0, s: 1 }, rng, 1),
         'only cursive letters join',
     );
+    assert.ok(!joinLetters(letter(0), letter(0.5, 'D'), rng, 1), 'nothing joins into a capital');
+    assert.ok(joinLetters(letter(0, 'A'), letter(0.5), rng, 1), 'A joins on');
+    assert.ok(!joinLetters(letter(0, 'T'), letter(0.5), rng, 1), 'T does not');
 
     const res = HW.generate(model, '<i>minimum</i> word', { seed: 1 });
     assert.deepEqual(res.missing, []);
     assert.equal(res.caretMap.chars.length, 12, 'every letter still has its place');
+    const caps = HW.generate(model, '<i>The Quick Brown Fox, ÉLAN</i>', { seed: 1 });
+    assert.deepEqual([caps.missing, caps.inferred], [[], []], 'capitals are cursive too');
 });
 
 test("cursive you've trained is used for italic, and leaves print alone", () => {

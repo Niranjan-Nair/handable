@@ -9,7 +9,7 @@
 // slant and heights) with a short way in and a short way out added on, by dynamic time
 // warping over height and direction. The ink lined up with the skeleton is the body.
 import { arcSample } from '../geometry.js';
-import { baseGlyph } from './skeleton.js';
+import { baseGlyph, joinsIn, joinsOut } from './skeleton.js';
 import { skeletonTransform } from './style.js';
 
 const STEP = 0.02; // units between compared points
@@ -18,7 +18,7 @@ const STEP = 0.02; // units between compared points
 // stroke first and cut down to its body; as they were when it has no cursive skeleton
 // or the body can't be found clearly
 export function cursiveBody(strokes, ch, style) {
-    const main = longest(strokes);
+    const main = mainStroke(strokes, ch);
     const rest = strokes.filter((s, i) => i !== main);
     const tmpl = template(ch, style);
     const body = tmpl && bodySpan(strokes[main], tmpl);
@@ -26,17 +26,20 @@ export function cursiveBody(strokes, ch, style) {
     return [body ? strokes[main].slice(body[0], body[1] + 1) : strokes[main], ...rest];
 }
 
-// the index of the longest stroke (the letter's body: the rest are dots and crosses)
-function longest(strokes) {
+// The index of the letter's main stroke: for a letter that joins on, the one ending
+// furthest right and low (its turn at the line, not a dot, a cross or the first stem
+// of H); for the rest, the longest
+function mainStroke(strokes, ch) {
     const len = (s) => s.reduce((t, p, k) => t + (k ? Math.hypot(p[0] - s[k - 1][0], p[1] - s[k - 1][1]) : 0), 0);
+    const score = joinsOut(ch) ? (s) => s.at(-1)[0] + s.at(-1)[1] : len;
     let best = 0;
-    for (let i = 1; i < strokes.length; i++) if (len(strokes[i]) > len(strokes[best])) best = i;
+    for (let i = 1; i < strokes.length; i++) if (score(strokes[i]) > score(strokes[best])) best = i;
 
     return best;
 }
 
 // The skeleton's main stroke in the writer's style, with a way in from the line before
-// it and a way out after it, as compared points: { pts, from, to } (the body is
+// it and a way out after it (where it's joined into, and joins on), as compared points: { pts, from, to } (the body is
 // pts[from..to]); null without a cursive skeleton
 function template(ch, style) {
     const base = baseGlyph(ch, true);
@@ -46,8 +49,8 @@ function template(ch, style) {
     const body = base.strokes[0].pts.map((p) => T(p.x, p.y));
     const a = body[0];
     const b = body.at(-1);
-    const wayIn = [{ x: a.x - 0.2, y: 0 }, a];
-    const wayOut = [b, { x: b.x + 0.15, y: b.y - 0.12 }];
+    const wayIn = joinsIn(ch) ? [{ x: a.x - 0.2, y: 0 }, a] : [a];
+    const wayOut = joinsOut(ch) ? [b, { x: b.x + 0.15, y: b.y - 0.12 }] : [b];
     const raw = (pts) => pts.map((p) => [p.x, p.y]);
     const parts = [wayIn, body, wayOut].map((pts) => withDirs(arcSample(raw(pts), STEP)));
 

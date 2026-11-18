@@ -1,6 +1,6 @@
 // The base font's skeletons, as glyphs (see basefont.js): its print letters and
 // symbols, and its cursive lowercase.
-import { glyphs as BASE_GLYPHS, cursive as CURSIVE } from './basefont.js';
+import { glyphs as BASE_GLYPHS, cursive as CURSIVE, CAPITALS_JOINING } from './basefont.js';
 import { bbox } from '../geometry.js';
 
 const baseCache = {};
@@ -36,6 +36,14 @@ export function baseGlyph(ch, cursive = false) {
 
     return (baseCache[key] = { strokes, width: bb.maxX - bb.minX, minY: bb.minY, maxY: bb.maxY });
 }
+
+// In cursive, whether a letter is joined into from the one before it (not capitals,
+// which start themselves), and whether it joins on into the next (lowercase, and the
+// capitals that end at the line). An accented letter joins as its letter does.
+const letterOf = (ch) => ch.normalize('NFD')[0];
+const isCapital = (ch) => letterOf(ch) !== letterOf(ch).toLowerCase();
+export const joinsIn = (ch) => !isCapital(ch);
+export const joinsOut = (ch) => !isCapital(ch) || CAPITALS_JOINING.includes(letterOf(ch));
 
 // every character the base font has a skeleton for
 export const baseChars = () => Object.keys(BASE_GLYPHS);

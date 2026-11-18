@@ -2,7 +2,7 @@
 // writer's own joined ligatures), or in cursive: slanted, and joined up.
 import { unitProb } from '../model/sequences.js';
 import { addBox, charBox, emptyBox } from './boxes.js';
-import { joinLetters, leadIn, leadOut } from './cursive.js';
+import { joinLetters, leadIn, leadOut, overhang } from './cursive.js';
 
 // The run cut into what gets written: single letters, and pairs or triples written
 // as one of the writer's ligatures about as often as they join them (not in cursive,
@@ -55,6 +55,7 @@ export function runBox(writer, chars, s, info) {
         const ctx = N === t.L ? 'solo' : gi === 0 ? 'start' : gi + t.L === N ? 'end' : 'mid';
         // (cursive letters are their bodies alone: the joins between them need room)
         if (k > 0) x += (writer.letterGap() + (cursive ? 0.05 : 0)) * s;
+        if (cursive && prev && prev.g) x -= overhang(prev.g) * s;
         const extra = { prev: t.i ? chars[t.i - 1] : info.prev, font, cursive };
 
         // the same letter written back-to-back ("ll", "ee", "ss") keeps the same form

@@ -6,6 +6,7 @@
 // the way its stroke begins, smoothly up into a loop or the rise into n, or up to a
 // point where it turns down (i, u, r, the top of a). The first letter of a word gets a
 // short lead-in, the last a short exit. Dots and crosses are never joined.
+import { joinsIn, joinsOut } from '../model/skeleton.js';
 import { STEP } from '../options.js';
 
 // a placed item's point in the run (items are { g, x, y, s }: a glyph at x, y, scale s)
@@ -80,11 +81,15 @@ function enterHigh(b, into, exitY) {
     if (k > 0) into.splice(0, k);
 }
 
-// Joins placed item a to b, the next letter, when both are cursive letters: a's
-// joining stroke runs on into b's. -> whether they were joined. (They meet without a
-// pen lift, so neither end pools ink there.)
+// whether glyph a joins on into glyph b, the next letter: both cursive, and not into a
+// capital, nor out of one like O or T
+const canJoin = (a, b) => a.cursive && b.cursive && joinsOut(a.char) && joinsIn(b.char);
+
+// Joins placed item a to b, the next letter, when a joins on into b: a's joining stroke
+// runs on into b's. -> whether they were joined. (They meet without a pen lift, so
+// neither end pools ink there.)
 export function joinLetters(a, b, rng, r) {
-    if (!a.g.cursive || !b.g.cursive) return false;
+    if (!canJoin(a.g, b.g)) return false;
 
     const out = a.g.strokes[0];
     const into = b.g.strokes[0];
@@ -98,9 +103,22 @@ export function joinLetters(a, b, rng, r) {
     return true;
 }
 
-// the first letter of a word: a short upstroke into it, from the line
+// How far the next letter tucks in under a capital that doesn't join on, in units: most
+// of the way under the part of it that overhangs its lower half (T's bar, the tops of
+// V and W), so it doesn't stand apart. 0 for other letters.
+export function overhang(g) {
+    if (!g.cursive || joinsOut(g.char)) return 0;
+
+    let low = -Infinity;
+    for (const st of g.strokes) for (const p of st) if (p.y > -0.45) low = Math.max(low, p.x);
+
+    return low > -Infinity ? 0.7 * Math.max(0, g.bodyMaxX - low) : 0;
+}
+
+// a letter nothing joins into: a short upstroke into it, from the line (not into a
+// capital, which starts itself)
 export function leadIn(it, rng, r) {
-    if (!it.g.cursive) return;
+    if (!it.g.cursive || !joinsIn(it.g.char)) return;
 
     const S = entryOf(it);
     // (from far enough left that a loop's upstroke crosses its down stroke low, as in l)
@@ -113,9 +131,10 @@ export function leadIn(it, rng, r) {
     );
 }
 
-// the last letter of a word: a short exit, off up to the right
+// a letter that joins nothing: a short exit, off up to the right (not from a capital
+// that doesn't join on)
 export function leadOut(it, rng, r) {
-    if (!it.g.cursive) return;
+    if (!it.g.cursive || !joinsOut(it.g.char)) return;
 
     const E = exitOf(it);
     const high = E.p.y - it.y < -0.3 * it.s;

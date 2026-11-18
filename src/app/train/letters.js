@@ -13,7 +13,7 @@ const CHARSETS = {
     accents: '´`ˆ¨˜¸éèêëàâäçñöôüûùíîïøßæœ¿¡',
     cyrillic: 'абвгдежзийклмнопрстуфхцчшщъыьэюяАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ',
     // written in cursive (as in a word), for italic text
-    cursive: 'abcdefghijklmnopqrstuvwxyz',
+    cursive: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
 };
 
 CHARSETS.all = CHARSETS.lower + CHARSETS.upper + CHARSETS.digits + CHARSETS.punct;

@@ -21,8 +21,8 @@ A stylus or touchscreen works best; a mouse is fine.
 
 1. **Train → Single characters.** Write each character 3–5 times. If you write a character in more
    than one way (a looped and a straight `y`, say), write each form a few times, in roughly the
-   proportion you use it. The **Cursive** set is for italic text: write each lowercase
-   letter in cursive, as you would in the middle of a word, with as much or as little of the
+   proportion you use it. The **Cursive** set is for italic text: write each letter
+   (lowercase and capitals) in cursive, as you would in the middle of a word, with as much or as little of the
    strokes into and out of it as you like (they're left out: the app draws its own joins). In
    **Sentences**, tick **Written in cursive** to train cursive from whole words instead, which
    is often easier: you get lowercase words to write, and their letters are cut out of the
@@ -285,7 +285,12 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
       down, as in i, u and r), a little different each time, with no pen lift. After a letter
       that leaves high (b, o, v, w) the next is entered at that height, as in "on". A word
       starts with a short lead-in and ends with a short exit. Dots, t-crosses and accents come
-      afterwards and are never joined. Capitals, digits and punctuation stay printed.
+      afterwards and are never joined.
+    - **Capitals** have cursive forms too. Those that end on a turn at the line (A, C, E, G, H,
+      J, K, L, M, N, Q, R, U, X, Y, Z) join on into the next letter; the others (B, D, F, I,
+      O, P, S, T, V, W) don't, and the next letter tucks in under any overhang (T's bar) and
+      starts with its own lead-in. Nothing joins into a capital. Digits and punctuation stay
+      printed.
   - **Shortcuts:** ⌘I italic, ⌘U underline, ⌘. superscript, ⌘, subscript, ⌘⇧X strikethrough, ⌘⇧H highlight,
     ⌘⇧L and ⌘⇧E align left and center (Ctrl on Windows and Linux). Right alignment has no
     shortcut: ⌘⇧R is the browser's hard reload, which mustn't change the text.
