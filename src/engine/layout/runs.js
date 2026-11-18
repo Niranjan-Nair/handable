@@ -53,8 +53,8 @@ export function runBox(writer, chars, s, info) {
         const gi = info.start + t.i;
         const N = info.n;
         const ctx = N === t.L ? 'solo' : gi === 0 ? 'start' : gi + t.L === N ? 'end' : 'mid';
-        // (cursive letters are their bodies alone: the joins between them need room)
-        if (k > 0) x += (writer.letterGap() + (cursive ? 0.05 : 0)) * s;
+        // (cursive letters sit closer: the joins between them run on from one to the next)
+        if (k > 0) x += (cursive ? 0.6 * writer.letterGap() : writer.letterGap()) * s;
         if (cursive && prev && prev.g) x -= overhang(prev.g) * s;
         const extra = { prev: t.i ? chars[t.i - 1] : info.prev, font, cursive };
 
@@ -68,8 +68,10 @@ export function runBox(writer, chars, s, info) {
         if (g && t.unit) writer.note('ligatures', t.s);
         addBox(b, cb, x, 0);
         const item = g && b.items.at(-1);
-        // in cursive, a letter runs on into the next one
+        // in cursive, a letter runs on into the next one (which may move on to make room)
+        const x0 = item && item.x;
         const joined = cursive && item && prev && prev.item && joinLetters(prev.item, item, writer.rng, writer.r);
+        if (joined) x += item.x - x0;
         if (prev && prev.item && !joined) ends.push(prev.item);
         if (item && !joined) starts.push(item);
         prev = { t, g, item };

@@ -279,17 +279,18 @@ The page in the preview is where you type. Text boxes put more text anywhere on 
       your heights, widths and slant.
     - **Joined at their connection points** (`layout/cursive.js`): each letter starts where the
       pen comes into it (the top of i or u, part way up a loop, the rise into n or e, the top
-      of a's bowl) and ends on a turn heading right. The strokes between letters are drawn as
-      the word is written: on the way the last letter was going, and into the next the way it
-      begins (smoothly up into a loop or the rise into n, or up to a point where the pen turns
-      down, as in i, u and r), a little different each time, with no pen lift. Into a bowl
-      that sets off back to the left (o, a, d, g, q) the join rises along the bowl's left side
-      and over its top, as the pen does, rather than across its middle. Into a tall letter
-      (h, l, b, k, f) the join runs straight up and meets it a little below its top, so the join
-      and the down stroke make the ascender, as in "th" and "wh". After a letter that leaves
-      high (b, o, v, w) a letter that starts by rising is entered at that height, as in "on". A word starts with a short lead-in
-      (except o, a, d, g and q, which start at their top) and ends with a short exit. Dots, t-crosses and accents come
-      afterwards and are never joined.
+      of a's bowl) and ends on a turn heading right. Letters sit closer than in print, and the
+      stroke between two letters is drawn as the word is written: one curve that bends one
+      way only (never an S), on from the way the last letter was going, a little different
+      each time, with no pen lift. Into a letter that starts by rising (n, m, e, a tall letter)
+      it runs on smoothly in the same direction: it meets the rise where it can do that in one
+      bend, or the letter moves on a little to make room. Into a letter where the pen turns
+      down (i, u, r) it rises to that point. Into a tall letter (h, l, b, k, f) the join runs
+      straight up and meets it a little below its top, so the join and the down stroke make
+      the ascender, as in "th" and "wh". After a letter that leaves high (b, o, v, w) a letter
+      that starts by rising is met where it reaches that height, as in "on". A word starts
+      with a short lead-in (except o, a, d, g and q, which start at their top) and ends with a
+      short exit. Dots, t-crosses and accents come afterwards and are never joined.
     - **Capitals** have cursive forms too. Those that end on a turn at the line (A, C, E, G, H,
       J, K, L, M, N, Q, R, U, X, Y, Z) join on into the next letter; the others (B, D, F, I,
       O, P, S, T, V, W) don't, and the next letter tucks in under any overhang (T's bar) and

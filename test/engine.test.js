@@ -161,6 +161,35 @@ test('italic is cursive: the pen runs on from each letter into the next', () => 
     assert.deepEqual([caps.missing, caps.inferred], [[], []], 'capitals are cursive too');
 });
 
+test('a cursive join bends one way only, on from the letter before', () => {
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    const bends = [];
+
+    for (const x of letters)
+        for (const y of letters) {
+            const ga = HW.sampleGlyph(model, x, { cursive: true, seed: 1, randomness: 1 });
+            const gb = HW.sampleGlyph(model, y, { cursive: true, seed: 8, randomness: 1 });
+            const n = ga.strokes[0].length;
+            joinLetters({ g: ga, x: 0, y: 0, s: 1 }, { g: gb, x: ga.bodyMaxX + 0.06, y: 0, s: 1 }, HW.makeRng(1), 1);
+            // (from the letter's last point on: how much it turns each way)
+            const j = ga.strokes[0].slice(n - 1);
+            const turn = [0, 0];
+
+            for (let i = 1; i < j.length - 1; i++) {
+                const ax = j[i].x - j[i - 1].x;
+                const ay = j[i].y - j[i - 1].y;
+                const bx = j[i + 1].x - j[i].x;
+                const by = j[i + 1].y - j[i].y;
+                const t = (ax * by - ay * bx) / (Math.hypot(ax, ay) * Math.hypot(bx, by) || 1);
+                if (Math.abs(t) > 0.01) turn[t > 0 ? 0 : 1] += Math.abs(t);
+            }
+
+            if (Math.min(...turn) > 0.05) bends.push(x + y);
+        }
+
+    assert.deepEqual(bends, []);
+});
+
 test("cursive you've trained is used for italic, and leaves print alone", () => {
     const ds = makeDataset(glyphs);
     // an l written alone in cursive: up from the line into its loop, down, and off on an exit
