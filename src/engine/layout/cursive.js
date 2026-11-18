@@ -28,12 +28,18 @@ function exitOf(it) {
     return { p, dir: direction(inRun(it, st[Math.max(0, st.length - 4)]), p) };
 }
 
-// where an item's joining stroke starts, and the way it sets off
+// where an item's joining stroke starts, and the way it sets off; corner: for a bowl
+// that sets off back to the left (o, a, d, g, q), the top left corner of the bowl
 function entryOf(it) {
     const st = it.g.strokes[0];
     const p = inRun(it, st[0]);
+    const dir = direction(p, inRun(it, st[Math.min(st.length - 1, 3)]));
+    if (dir.x >= -0.3) return { p, dir };
 
-    return { p, dir: direction(p, inRun(it, st[Math.min(st.length - 1, 3)])) };
+    const bowl = st.slice(0, Math.ceil(st.length / 2)).map((q) => inRun(it, q));
+    const corner = { x: Math.min(...bowl.map((q) => q.x)), y: Math.min(...bowl.map((q) => q.y)) };
+
+    return { p, dir, corner };
 }
 
 // The pen's way from exit E to entry S (each { p, dir }), at scale k, as points from
@@ -45,8 +51,11 @@ function penWay(E, S, k, jit) {
     const c1 = { x: a.x + E.dir.x * d * 0.35 * jit(), y: a.y + E.dir.y * d * 0.35 * jit() };
     let c2;
 
+    // up from below into a bowl that sets off back to the left (o, a, d, g, q): up its
+    // left side and over the top into where it starts, not across the middle of it
+    if (S.corner && b.y < a.y - 0.1 * k) c2 = { x: b.x + (S.corner.x - b.x) * jit(), y: S.corner.y };
     // smoothly on into a stroke that sets off upwards (a loop, the rise into n or e)
-    if (S.dir.y < -0.25) c2 = { x: b.x - S.dir.x * d * 0.35 * jit(), y: b.y - S.dir.y * d * 0.35 * jit() };
+    else if (S.dir.y < -0.25) c2 = { x: b.x - S.dir.x * d * 0.35 * jit(), y: b.y - S.dir.y * d * 0.35 * jit() };
     // across into a start no higher than the exit (after o or w, at the x-height)
     else if (b.y > a.y - 0.1 * k) c2 = { x: b.x - 0.35 * d * jit(), y: b.y };
     // or up to a point, where the pen turns (i, u, r, the top of a)
@@ -68,16 +77,21 @@ function penWay(E, S, k, jit) {
 
 const jitter = (rng, r) => () => 1 + rng.normal() * 0.12 * Math.min(r, 1.5);
 
-// After a letter that leaves high (b, o, v, w), a next letter that starts by rising
-// (n, m, v, y …) is entered at that height: the part of its rise still below the exit
-// is left out (so "on" doesn't dip to the line and climb back up into the n). Not e,
-// whose rise makes its loop.
+// After a letter that leaves high (b, o, v, w), the next letter is entered where its
+// first stroke rises to the exit: the part of its rise still below is left out (so "on"
+// doesn't dip to the line and climb back up into the n). Into a tall loop (h, l, b, k,
+// f), a little above the exit, so the join sweeps up into the loop rather than meeting
+// it where it crosses the stem and turning sharply up. Not e, whose rise makes its loop.
 function enterHigh(b, into, exitY) {
     const level = (exitY - b.y) / b.s;
     if (level > -0.3 || b.g.char === 'e') return;
 
+    let top = 0; // the top of the stroke's first rise
+    while (top < into.length - 3 && into[top + 1].y <= into[top].y) top++;
+    const enter = into[top].y < level - 0.3 ? level - 0.15 : level + 0.06;
+
     let k = 0;
-    while (k < into.length - 3 && into[k].y > level + 0.06 && into[k + 1].y <= into[k].y) k++;
+    while (k < top && into[k].y > enter) k++;
     if (k > 0) into.splice(0, k);
 }
 
@@ -116,11 +130,13 @@ export function overhang(g) {
 }
 
 // a letter nothing joins into: a short upstroke into it, from the line (not into a
-// capital, which starts itself)
+// capital, which starts itself, nor a bowl like o or a, which starts at its top)
 export function leadIn(it, rng, r) {
     if (!it.g.cursive || !joinsIn(it.g.char)) return;
 
     const S = entryOf(it);
+    if (S.corner) return;
+
     // (from far enough left that a loop's upstroke crosses its down stroke low, as in l)
     const from = { p: { x: S.p.x - 0.24 * it.s, y: it.y - 0.02 * it.s, w: S.p.w }, dir: { x: 0.8, y: -0.6 } };
     const into = it.g.strokes[0];

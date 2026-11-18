@@ -142,6 +142,19 @@ test('italic is cursive: the pen runs on from each letter into the next', () => 
     assert.ok(joinLetters(letter(0, 'A'), letter(0.5), rng, 1), 'A joins on');
     assert.ok(!joinLetters(letter(0, 'T'), letter(0.5), rng, 1), 'T does not');
 
+    // out of a letter that leaves high (as w does) into a tall loop (as h's): entered a
+    // little above the exit, so the join sweeps up into the loop
+    const high = { g: { char: 'w', cursive: true, strokes: [line(0, -0.48, 0.3, -0.48)] }, x: 0, y: 0, s: 1 };
+    const rise = Array.from({ length: 21 }, (_, k) => ({ x: 0.1 + k * 0.002, y: -0.55 - k * 0.02, w: 1 }));
+    const loop = {
+        g: { char: 'h', cursive: true, strokes: [[...rise, ...line(0.14, -0.95, 0.1, 0)]] },
+        x: 0.4,
+        y: 0,
+        s: 1,
+    };
+    assert.ok(joinLetters(high, loop, rng, 1));
+    assert.ok(loop.g.strokes[0][0].y < -0.6, 'enters the loop above the exit');
+
     const res = HW.generate(model, '<i>minimum</i> word', { seed: 1 });
     assert.deepEqual(res.missing, []);
     assert.equal(res.caretMap.chars.length, 12, 'every letter still has its place');
