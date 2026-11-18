@@ -47,6 +47,25 @@ const PROMPTS = [
     'Okay, fine.',
 ];
 
+// for cursive: lowercase words, joined up (between them they cover every letter)
+const CURSIVE_PROMPTS = [
+    'the quick brown fox',
+    'jumps over the lazy dog',
+    'minimum allure',
+    'pack my box with five dozen jugs',
+    'sphinx of black quartz',
+    'judge my vow',
+    'running water',
+    'a very good day',
+    'wizards quickly jump',
+    'yellow kites',
+    'hello there',
+    'summer',
+];
+
+// the sentences to write, in print or in cursive
+const prompts = () => (cursiveLine() ? CURSIVE_PROMPTS : PROMPTS);
+
 // The pad keeps the text on one line: the guides shrink for longer text, so the
 // writing fits (strokes are stored in units, so the size doesn't change what's
 // learned). How wide the text will come out is measured with your own model.
@@ -93,20 +112,22 @@ function onTextChange() {
 
 export function setPrompt(i) {
     // on a narrow pad, skip sentences that wouldn't fit at a comfortable size
-    for (let k = 0; k < PROMPTS.length; k++) {
-        const j = (((i + k) % PROMPTS.length) + PROMPTS.length) % PROMPTS.length;
+    const list = prompts();
 
-        if (unitFor(PROMPTS[j]) >= PAD_MIN_UNIT) {
+    for (let k = 0; k < list.length; k++) {
+        const j = (((i + k) % list.length) + list.length) % list.length;
+
+        if (unitFor(list[j]) >= PAD_MIN_UNIT) {
             i = j;
             break;
         }
     }
 
-    settings.prompt = ((i % PROMPTS.length) + PROMPTS.length) % PROMPTS.length;
+    settings.prompt = ((i % list.length) + list.length) % list.length;
     saveSettings();
     exitSegEdit();
     sentencePad.clear();
-    $('#s-text').value = PROMPTS[settings.prompt];
+    $('#s-text').value = list[settings.prompt];
     onTextChange();
 }
 
@@ -122,6 +143,8 @@ $('#s-cursive').addEventListener('change', () => {
     saveSettings();
     $('#s-target').classList.toggle('cursive', cursiveLine());
     exitSegEdit();
+    // (a sentence for the other kind of writing, unless something's written already)
+    if (sentencePad.isEmpty()) setPrompt(settings.prompt || 0);
 });
 
 $('#s-cursive').checked = !!settings.cursiveSentences;
@@ -138,8 +161,11 @@ function readPad(fixed) {
     segMissing = r.missing.map((j) => r.labels[j].ch);
 }
 
-// which neighbouring letters were written without lifting the pen
+// which neighbouring letters were written without lifting the pen (not in cursive,
+// where they all are, and the joins are drawn by the app)
 function segLinks() {
+    if (cursiveLine()) return [];
+
     return segGroups.slice(1).map((g, i) => {
         const a = segGroups[i].label;
         const b = g.label;

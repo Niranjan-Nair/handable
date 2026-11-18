@@ -285,13 +285,12 @@ function synthTrained(entry, ch, ctx, rng, o, extra) {
 }
 
 // A letter in cursive (extra.cursive): the writer's own cursive letter where they've
-// trained it (ownEntry: with the stroke into it, as they write it), or else its
-// cursive form built from their strokes where they match it, like an untrained
-// letter. Its first stroke is the one that joins (see layout/cursive.js). -> a glyph,
+// trained it (its body: see model/cursive-body.js), or else its cursive form built
+// from their strokes where they match it, like an untrained letter. Its first stroke is the one that joins (see layout/cursive.js). -> a glyph,
 // or null if it has no cursive form
 function cursiveGlyph(model, ch, ctx, rng, o, extra) {
     const own = model.cursive && model.cursive[ch];
-    if (own) return Object.assign(synthTrained(own, ch, ctx, rng, o, extra), { cursive: true, ownEntry: true });
+    if (own) return Object.assign(synthTrained(own, ch, ctx, rng, o, extra), { cursive: true });
 
     const plan = inferPlan(model, ch, true);
     if (!plan) return null;

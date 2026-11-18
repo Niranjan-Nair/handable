@@ -98,10 +98,9 @@ export function joinLetters(a, b, rng, r) {
     return true;
 }
 
-// the first letter of a word: a short upstroke into it, from the line (not into one
-// of the writer's own cursive letters: they wrote its way in)
+// the first letter of a word: a short upstroke into it, from the line
 export function leadIn(it, rng, r) {
-    if (!it.g.cursive || it.g.ownEntry) return;
+    if (!it.g.cursive) return;
 
     const S = entryOf(it);
     // (from far enough left that a loop's upstroke crosses its down stroke low, as in l)

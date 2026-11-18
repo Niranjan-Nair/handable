@@ -146,7 +146,7 @@ test('italic is cursive: the pen runs on from each letter into the next', () => 
 
 test("cursive you've trained is used for italic, and leaves print alone", () => {
     const ds = makeDataset(glyphs);
-    // an l written alone in cursive: up into its loop, down, and off on an exit
+    // an l written alone in cursive: up from the line into its loop, down, and off on an exit
     const path = [
         [0, 0],
         [0.26, -0.6],
@@ -175,8 +175,10 @@ test("cursive you've trained is used for italic, and leaves print alone", () => 
     assert.equal(m.cursive.l.count, 3);
     assert.equal(m.chars.l.count, model.chars.l.count, 'not a print l');
     const g = HW.sampleGlyph(m, 'l', { cursive: true, seed: 1, randomness: 0 });
-    assert.ok(g.cursive && g.ownEntry, 'their own cursive l');
-    assert.ok(g.strokes[0].at(-1).y > -0.06, 'kept down to its turn at the line: the exit is the join');
+    assert.ok(g.cursive, 'their own cursive l');
+    const body = m.cursive.l.variants[0].medoid.strokes[0];
+    assert.ok(body[0].y < -0.3, 'its way in is left out: it starts part way up the loop');
+    assert.ok(body.at(-1).y > -0.06, 'and its way out: it ends on its turn at the line');
     assert.equal(
         HW.generate(m, 'lull', { seed: 1 }).svg,
         HW.generate(model, 'lull', { seed: 1 }).svg,

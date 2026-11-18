@@ -90,9 +90,7 @@ export function composeGlyph(ch, pen) {
     const strokes = c.special ? special(c.special, pen) : accented(c, pen);
     if (!strokes) return null;
 
-    const { inferred, cursive, ownEntry } = strokes;
-
-    return finishGlyph(ch, strokes.strokes, { inferred, cursive, ownEntry });
+    return finishGlyph(ch, strokes.strokes, { inferred: strokes.inferred, cursive: strokes.cursive });
 }
 
 function accented({ base, marks }, pen) {
@@ -118,7 +116,7 @@ function accented({ base, marks }, pen) {
     }
 
     // (in cursive, an accented letter joins like its letter: the letter's strokes come first)
-    return { strokes, inferred: g.inferred, cursive: g.cursive, ownEntry: g.ownEntry };
+    return { strokes, inferred: g.inferred, cursive: g.cursive };
 }
 
 // an accent's strokes, moved to its place on the letter (strokes so far); top = the

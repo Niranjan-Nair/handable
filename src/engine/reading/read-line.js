@@ -11,41 +11,11 @@
 import { sampleGlyph } from '../glyph/synth.js';
 import { textLabels } from './labels.js';
 import { makeGroup } from './segment.js';
+import { arcSample } from '../geometry.js';
 import { clamp } from '../util.js';
 
 const REC_STEP = 0.02;
 const REC_N = 20;
-
-// points every `step` along a raw stroke, remembering which raw point each came from
-function arcSample(raw, step) {
-    const out = [{ x: raw[0][0], y: raw[0][1], i: 0 }];
-    let acc = 0;
-
-    for (let k = 1; k < raw.length; k++) {
-        let ax = raw[k - 1][0];
-        let ay = raw[k - 1][1];
-        const bx = raw[k][0];
-        const by = raw[k][1];
-        let d = Math.hypot(bx - ax, by - ay);
-
-        while (d > 1e-9 && acc + d >= step) {
-            const u = (step - acc) / d;
-            ax += (bx - ax) * u;
-            ay += (by - ay) * u;
-            d = Math.hypot(bx - ax, by - ay);
-            acc = 0;
-            out.push({ x: ax, y: ay, i: k });
-        }
-
-        acc += d;
-    }
-
-    const L = raw[raw.length - 1];
-    const e = out[out.length - 1];
-    if (Math.hypot(L[0] - e.x, L[1] - e.y) > step * 0.3) out.push({ x: L[0], y: L[1], i: raw.length - 1 });
-
-    return out;
-}
 
 // stroke direction as a doubled angle, so a line drawn either way matches
 function withDirs(pts) {
